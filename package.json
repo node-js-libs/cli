@@ -1,0 +1,22 @@
+{ "name"          : "cli",
+  "description"   : "A command line opts/args parser for node.js",
+  "version"       : "0.1.0",
+  "homepage"      : "http://github.com/chriso/cli",
+  "keywords"      : ["cli","command line","opts","parseopt","opt","args","console"],
+  "author"        : "Chris O'Hara <cohara87@gmail.com>",
+  "main"          : "./lib",
+  "directories"   : { "lib" : "./lib" },
+  "bugs": { 
+    "mail": "cohara87@gmail.com",
+    "web": "http://github.com/chriso/cli/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/chriso/cli.git"
+  },
+  "engines": { "node": ">=0.2.5" },
+  "licenses": [{ 
+    "type": "MIT", 
+    "url": "http://github.com/chriso/node.io/raw/master/LICENSE"
+  }]
+}
