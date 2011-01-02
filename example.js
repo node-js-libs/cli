@@ -1,18 +1,22 @@
 #!/usr/bin/env node
 
-var cli = require('cli');
+var cli = require('./cli').enableDaemon();
 
-var opts = {
+cli.parse({
     create: ['c', 'Create a new path'],
-    email: ['e', 'The email you want to send to. This is a very long description which will still play nice when you use the -h or --help switch', 'EMAIL'],
-    fork: ['f', 'Fork this many workers', 'FLOAT', 4],
-    input: ['i', 'Read lines from this file', 'FILE']
-};
+    email: ['e', 'The email you want to send to. This is a very long description which will go over multiple lines (without breaking words) so that the output is <= 80 characters', 'EMAIL'],
+    fork: ['fork', 'Fork this many workers', [2,4,6,8], 4],
+    input: ['input', 'Read lines from this file', 'FILE']
+});
 
-var options = cli.parse(opts), args = cli.args;
-
-console.log(options);
-console.log(args);
+cli.main(function (args, options) {
+    
+    this.ok('App started successfully');
+    
+    this.log(options);
+    this.log(args);
+    
+});
 
 // OR..
 
