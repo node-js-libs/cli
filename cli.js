@@ -1,3 +1,26 @@
+/**
+ * Copyright (c) 2010 Chris O'Hara <cohara87@gmail.com>
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining
+ * a copy of this software and associated documentation files (the
+ * "Software"), to deal in the Software without restriction, including
+ * without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject to
+ * the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+ * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+ * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+ * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
 var fs = require('fs'),
     path = require('path'),
     util = require('util'),
@@ -11,12 +34,12 @@ var app, argv, curr_opt, curr_val, full_opt, is_long,
 
 var enable_daemon, daemon_arg, lock_file, log_file;
 
-//Inherit from console
+//Inherit from `console`
 for (var i in console) {
     exports[i] = console[i];
 }
 
-//Provide easy access to some builtin methods
+//Provide easy access to some built-in node methods
 exports.exec = function (cmd, callback) {
     childp.exec(cmd, function (err, stdout, stderr) {
         if (err || stderr) {
