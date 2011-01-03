@@ -4,12 +4,12 @@ It includes:
 
 - A full featured opts/args parser
 - Support for plugins, such as daemon support (see below)
-- Automatically build usage details for -h,--help
-- Auto-detect the app version from a nearby *package.json* when using -v,--version
+- Automatically build usage details with `-h,--help`
+- Auto-detect the app version from a nearby *package.json* when using `-v,--version`
 
 ## Example
 
-*echo.js* - similiar to this *nix echo(1)
+*echo.js* - similiar to the *nix *echo(1)*
 
     #!/usr/bin/env node
 
@@ -45,7 +45,7 @@ It includes:
         
         try {
             if (options.output) {
-                output_stream = this.native.fs.createWriteStream(this.options.output)
+                output_stream = this.native.fs.createWriteStream(options.output)
             } else {
                 output_stream = process.stdout;
             }
@@ -59,7 +59,7 @@ To output usage information
 
     $ ./echo.js --help
     
-All of the following commands are equivalent and write `foo	bar` to *out.txt*
+All of the following commands are equivalent and write `foo\tbar` to *out.txt*
 
     $ ./echo.js -n -e --output=out.txt "foo\tbar"
     $ ./echo.js --newline --escape --output "out.txt" "foo\tbar"
@@ -78,32 +78,34 @@ Alternatively, you can install cli with [npm](http://npmjs.org/)
 
 ## Plugins
 
-Plugins can be enabled using `cli.enable(plugin1, [plugin2, ...]);`, and disabled using the equivalent `disable()` e.g.
+Plugins can be enabled using `cli.enable(plugin1, [plugin2, ...]);`, and disabled using the equivalent `disable()`, e.g.
 
     cli.enable('daemon', 'status');
    
 Available plugins are:
 
-**status**
-
-Adds methods to output stylized status messages to the console `cli.info(msg)`, `cli.debug(msg)`, `cli.ok(msg)`, `cli.error(msg)`, `cli.fatal(msg)`. Note that debug messages are hidden by default - display them using the added `--debug` opt
-
-`-s,--silent` is also added to omit all status messages (except for fatal)
-
 **help** - *enabled by default*
 
-Adds the `-h,--help` and automatically builds the usage information
+Adds `-h,--help` to output auto-generated usage information
 
 **version** - *enabled by default*
 
-Adds the `-v,--version` switch and automatically outputs version information for the app.
+Adds `-v,--version` to output version information for the app.
 
 Set the version using
 
     cli.setVersion(version) //OR
     cli.setVersion(path_to_packagejson);
     
-If setVersion isn't called, cli will attempt to locate *package.json* in `./`, `../`, and `../../`
+If setVersion isn't called, cli will attempt to locate *package.json* in `./`, `../`, or `../../`
+
+**status**
+
+Adds methods to output stylized/colored status messages to the console `cli.info(msg)`, `cli.debug(msg)`, `cli.ok(msg)`, `cli.error(msg)`, `cli.fatal(msg)`
+
+`--debug` is required to show any messages output with `cli.debug(msg)`
+
+`-s,--silent` will omit all status messages (except for fatal)
 
 **daemon**  - *requires* `npm install daemon`
     
@@ -119,9 +121,9 @@ Adds `-t,--timeout N` to exit the process after N seconds with an error
 
 Adds `-c,--catch` to catch and output uncaughtExceptions and resume execution
 
-## Addons
+**Other bundled goodies**
 
-cli also comes bundled with creationix' [stack](https://github.com/creationix/stack) and kof's [node-natives](https://github.com/kof/node-natives) (because they're awesome)
+cli comes bundled with kof's [node-natives](https://github.com/kof/node-natives) and creationix' [stack](https://github.com/creationix/stack)
 
 To access any native node module, use
 
