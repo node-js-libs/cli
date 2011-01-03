@@ -21,61 +21,176 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+ //Note: cli includes kof/node-natives and creationix/stack. I couldn't find 
+ //license information for either - contact me if you want your license added
+ 
 var fs = require('fs'),
     path = require('path'),
     util = require('util'),
-    daemon = require('daemon'),
-    childp = require('child_process'),
-    cwd = process.cwd();
+	http = require('http'),
+    childp = require('child_process');
 
-var app, argv, curr_opt, curr_val, full_opt, is_long,
+var cli = exports,
+    app, argv, curr_opt, curr_val, full_opt, is_long,
     short_tags = [], opt_list, parsed = {},
-    version, usage, eq, len, argv_parsed;
-
-var enable_daemon, daemon_arg, lock_file, log_file;
-
-//Inherit from `console`
+    version, usage, eq, len, argv_parsed,
+	daemon, daemon_arg, hide_status, show_debug;
+	
+//cli inherits `console` and `process.exit`
 for (var i in console) {
-    exports[i] = console[i];
+    cli[i] = console[i];
+}
+cli.exit = process.exit;
+
+cli.options = {};
+cli.args = [];
+
+/**
+ * Define plugins. Plugins can be enabled / disabled by calling:
+ *
+ *     `cli.enable(plugin1, [plugin2, ...])`
+ *     `cli.disable(plugin1, [plugin2, ...])`
+ * 
+ * Methods are chainable, e.g. `cli.enable(plugin).disable(plugin2)`
+ *
+ * The 'help' and 'version' plugins are enabled by default.
+ */
+var enable = {
+	help: true, //Adds -h, --help
+	version: true, //Adds -v,--version
+	
+	//Adds -d,--daemon [ARG] => (see cli.daemon() below)
+	daemon: false, 
+	
+	//Adds -s,--silent & --debug => (see addStatusMethods() below)
+	status: false, 
+	
+	//Add -t,--timeout X => timeout the process after X seconds
+	timeout: false,
+	
+	//Adds -c,--catch => catch and output uncaughtExceptions
+	catchall: false,
 }
 
-//Provide easy access to some built-in node methods
-exports.exec = function (cmd, callback) {
+/**
+ * Used to enable plugins.
+ *
+ * @return cli (for chaining)
+ * @api public
+ */
+cli.enable = function (/*plugins*/) {
+	Array.prototype.slice.call(arguments).forEach(function (plugin) {
+		switch (plugin) {
+		case 'daemon':
+			try {
+				daemon = require('daemon');
+				if (typeof daemon.start !== 'function') {
+					throw 'Invalid module';
+				}
+			} catch (e) {
+				cli.fatal('daemon not installed. Please run `npm install daemon`');
+			}
+			break;
+		case 'catchall':
+			process.on('uncaughtException', function (err) {
+				status('Uncaught exception: ' + (err.msg || err), 'error');
+			});
+			break;
+		case 'help': case 'version': 
+		case 'autocomplete': case 'timeout':
+			break;
+		case 'status':
+			addStatusMethods();
+			break;
+		default:
+			cli.fatal('Unknown plugin "' + plugin + '"');
+			break;
+		}
+		enable[plugin] = true;
+	});
+    return cli;
+}
+
+/**
+ * Used to disable plugins.
+ *
+ * @return cli (for chaining)
+ * @api public
+ */
+cli.disable = function (/*plugins*/) {
+	Array.prototype.slice.call(arguments).forEach(function (plugin) {
+		if (enable[plugin]) {
+			enable[plugin] = false;
+		}
+	});
+    return cli;
+}
+
+/**
+ * A wrapper for child_process.exec()
+ * 
+ * If the child_process exits successfully, `callback` receives an array of 
+ * stdout lines. The current process exits if the child process has an error 
+ * and `errback` isn't defined.
+ *
+ * @param {String} cmd
+ * @param {Function} callback (optional)
+ * @param {Function} errback (optional)
+ * @api public
+ */
+cli.exec = function (cmd, callback, errback) {
     childp.exec(cmd, function (err, stdout, stderr) {
-        if (err || stderr) {
-            exports.fatal('exec() failed\n' + (err || stderr));
+        err = err || stderr;
+        if (err) {
+            if (errback) {
+                return errback(err);
+            }
+            return cli.fatal('exec() failed\n' + err);
         }
-        callback(stdout.split('\n'));
+        if (callback) {
+            callback(stdout.split('\n'));
+        }
     });
 }
 
-exports.options = {};
-exports.args = [];
-
-exports.enableDaemon = function () {
-    enable_daemon = true;
-    return exports;
-}
-
-exports.setArgv = function (arr, keep_arg0) {
+/**
+ * Sets argv (default is process.argv) with an Array or String.
+ *
+ * @param {Array|String} argv
+ * @param {Boolean} keep_arg0 (optional - default is false)
+ * @api public
+ */
+cli.setArgv = function (arr, keep_arg0) {
     if (!(arr instanceof Array)) {
         arr = arr.split(' ');
+        //TODO: Parse argv strings with quoted args
     }
+    
     app = arr.shift();
+    
     //Strip off argv[0] if it's 'node'
     if (!keep_arg0 && 'node' === app) {
         app = arr.shift();
     }
+    
     app = path.basename(app);
-    exports.args = argv = arr;
+    
+    //cli.args is initially equal to argv. A call to parse() or next() will
+    //filter out opts
     argv_parsed = false;
+    cli.args = argv = arr;
 };
+cli.setArgv(process.argv);
 
-exports.setArgv(process.argv);
-
-exports.next = function () {
+/**
+ * Returns the next short/long opt, or false if no opts are found.
+ *
+ * @return {String} opt
+ * @api public
+ */
+cli.next = function () {
     if (!argv_parsed) {
-        exports.args = [];
+        cli.args = [];
         argv_parsed = true;
     }
     
@@ -97,15 +212,15 @@ exports.next = function () {
     //If an escape sequence is found (- or --), subsequent opts are assumed to be args
     if (curr_opt === '-' || curr_opt === '--') {
         while (argv.length) {
-            exports.args.push(argv.shift());
+            cli.args.push(argv.shift());
         }
         return false;
     }
     
     //If the next element in argv isn't an opt, add it to the list of args
     if (curr_opt[0] !== '-') {
-        exports.args.push(curr_opt);
-        return exports.next();
+        cli.args.push(curr_opt);
+        return cli.next();
     } else {
         //Check if the opt is short/long
         is_long = curr_opt[1] === '-';
@@ -115,7 +230,7 @@ exports.next = function () {
     //Accept grouped short opts, e.g. -abc => -a -b -c
     if (!is_long && curr_opt.length > 1) {
         short_tags = curr_opt.split('');
-        return exports.next();
+        return cli.next();
     }
     
     //Check if the long opt is in the form --option=VALUE
@@ -137,11 +252,32 @@ exports.next = function () {
     return curr_opt;
 };
 
-exports.parse = function (opts) {
-    var default_val, i, parsed = exports.options;
-    opt_list = opts;
-    while (o = exports.next()) {
+/**
+ * Parses command line opts.
+ *
+ * `opts` must be an object with opts defined like:
+ *		long_tag: [short_tag, description, value_type, default_value];
+ *
+ * The method returns:
+ *      long_tag: value
+ *
+ * See README.md for more information.
+ * 
+ * @param {Object} opts
+ * @return {Object} opts (parsed)
+ * @api public
+ */
+cli.parse = function (opts) {
+    var default_val, i, parsed = cli.options;
+    opt_list = opts || {};
+    while (o = cli.next()) {
         for (opt in opt_list) {
+			if (!(opt_list[opt] instanceof Array)) {
+				continue;
+			}
+			if (opt_list[opt][0] === false) {
+				opt_list[opt][0] = opt;
+			}
             if (o === opt || o === opt_list[opt][0]) {
                 if (opt_list[opt].length === 2) {
                     parsed[opt] = true;
@@ -157,7 +293,7 @@ exports.parse = function (opts) {
                             opt_list[opt][2][i] += '';
                         }
                     }
-                    parsed[opt] = exports.getValueFromArr(is_long ? null : default_val, opt_list[opt][2]);
+                    parsed[opt] = cli.getArrayValue(opt_list[opt][2], is_long ? null : default_val);
                     break;
                 }
                 if (opt_list[opt][2].toLowerCase) {
@@ -167,33 +303,40 @@ exports.parse = function (opts) {
                 case 'string':
                 case 1:
                 case true:
-                    parsed[opt] = exports.getValue(default_val);
+                    parsed[opt] = cli.getValue(default_val);
                     break;
                 case 'int':
                 case 'number':
                 case 'num':
-                    parsed[opt] = exports.getInt(default_val);
+                case 'time':
+                case 'seconds':
+                case 'secs':
+                case 'minutes':
+                case 'mins':
+                case 'x':
+                case 'n':
+                    parsed[opt] = cli.getInt(default_val);
                     break;
                 case 'float':
                 case 'decimal':
-                    parsed[opt] = exports.getFloat(default_val);
+                    parsed[opt] = cli.getFloat(default_val);
                     break;
                 case 'path':
                 case 'file':
                 case 'directory':
                 case 'dir':
-                    parsed[opt] = exports.getPath(default_val, opt_list[opt][2]);
+                    parsed[opt] = cli.getPath(default_val, opt_list[opt][2]);
                     break;
                 case 'email':
-                    parsed[opt] = exports.getEmail(default_val);
+                    parsed[opt] = cli.getEmail(default_val);
                     break;
                 case 'url':
                 case 'uri':
                 case 'domain':
-                    parsed[opt] = exports.getUrl(default_val, opt_list[opt][2]);
+                    parsed[opt] = cli.getUrl(default_val, opt_list[opt][2]);
                     break;
                 case 'ip':
-                    parsed[opt] = exports.getIp(default_val);
+                    parsed[opt] = cli.getIp(default_val);
                     break;
                 case 'bool':
                 case 'boolean':
@@ -205,33 +348,83 @@ exports.parse = function (opts) {
                 case 0:
                     parsed[opt] = false;
                 default:
-                     exports.fatal('Unknown opt type "' + opt_list[opt][2] + '"');
+                     cli.fatal('Unknown opt type "' + opt_list[opt][2] + '"');
                 }
                 break;
             }
         }
         if (typeof parsed[opt] === 'undefined') {
-            if (o === 'v' || o === 'version') {
-                exports.getVersion();
-            } else if (o === 'h' || o === 'help') {
-                exports.getUsage();
-            } else if (enable_daemon && (o === 'd' || o === 'daemon')) {
-                daemon_arg = exports.getValueFromArr(is_long ? null : 'start', ['start','stop','restart','pid','log']);
+            if (enable.version && (o === 'v' || o === 'version')) {
+                cli.getVersion();
+            } else if (enable.help && (o === 'h' || o === 'help')) {
+                cli.getUsage();
+            } else if (enable.daemon && (o === 'd' || o === 'daemon')) {
+                daemon_arg = cli.getArrayValue(['start','stop','restart','pid','log'], is_long ? null : 'start');
+            } else if (enable.catchall && (o === 'c' || o === 'catch')) {
+                //
+            } else if (enable.status && (o === 's' || o === 'silent' || o === 'debug')) {
+                hide_status = (o === 's' || o === 'silent');
+				show_debug = o === 'debug';
+            } else if (enable.timeout && (o === 't' || o === 'timeout')) {
+				var secs = cli.getInt();
+                setTimeout(function () {
+					cli.fatal('Process timed out after ' + secs + 's');
+				}, secs * 1000);
             } else {
-                exports.fatal('Unknown option ' + full_opt);
+                cli.fatal('Unknown option ' + full_opt);
             }
-        }
-        
+        }   
     }
+	//Fill the remaining options
+	for (opt in opt_list) {
+		if (!(opt_list[opt] instanceof Array)) {
+			parsed[opt] = opt_list[opt];
+			continue;
+		} else if (typeof parsed[opt] === 'undefined') {
+			parsed[opt] = null;
+		}
+	}
     return parsed;
 };
+
+/**
+ * Adds methods to output styled status messages to the console. To enable
+ * status methods, use `cli.enable('status')`
+ *
+ * Added methods are cli.info(msg), cli.error(msg), cli.ok(msg), and 
+ * cli.debug(msg)
+ *
+ * Note: 
+ *    1) debug() messages are hidden by default. Display them with 
+ *       the --debug opt
+ *    2) to hide all status messages, use the -s,--silent opt.
+ * 
+ * @api private
+ */
+var addStatusMethods = function () {
+	['info', 'error', 'ok', 'debug'].forEach(function (type) {
+		cli[type] = function (msg) {
+			status(msg, type);
+		};
+	});
+};
+
+/**
+ * Exit the process with a message and status: 1
+ * 
+ * @param {String} msg
+ * @api public
+ */
+cli.fatal = function (msg) {
+	status(msg, 'fatal');
+}
 
 /**
  * Outputs a styled message to the console.
  *
  * @param {String} msg
- * @param {String} type (optional)
- * @api public
+ * @param {String} type (optional - default = info)
+ * @api private
  */
 var status = function (msg, type) {
     switch (type) {
@@ -252,35 +445,39 @@ var status = function (msg, type) {
         msg = '\x1B[32mOK\x1B[0m: ' + msg; 
         break; 
     }
-    console.log(msg);
     if (type === 'fatal') {
+		console.error(msg);
         process.exit(1);
     }
+    if (hide_status || (!show_debug && type === 'debug')) {
+        return;
+    }
+    if (type === 'error') {
+		console.error(msg);
+	} else {
+		console.log(msg);
+	}
 };
-['info', 'error', 'fatal', 'ok', 'debug'].forEach(function (type) {
-    exports[type] = function (msg) {
-        status(msg, type);
-    };
-});
 
-exports.setVersion = function (v) {
+cli.setVersion = function (v) {
     if (v.indexOf('package.json')) {
-        exports.parsePackageJson(v);
+        cli.parsePackageJson(v);
     } else {
         version = v;
     }
+    return cli;
 };
 
-exports.getVersion = function () {
+cli.getVersion = function () {
     if (typeof version === 'undefined') {
         //Look for a package.json
-        exports.parsePackageJson();
+        cli.parsePackageJson();
     }
     console.log(app + ' v' + version);
     process.exit();
 };
 
-exports.parsePackageJson = function (path) {
+cli.parsePackageJson = function (path) {
     var parse_packagejson = function (path) {
         var packagejson = JSON.parse(fs.readFileSync(path, 'utf8'));
         version = packagejson.version;
@@ -293,7 +490,7 @@ exports.parsePackageJson = function (path) {
                 return;
             } catch (e) {
                 if (i === l-1) {
-                    exports.fatal(err);
+                    cli.fatal(err);
                 }
             }
         }
@@ -310,15 +507,15 @@ exports.parsePackageJson = function (path) {
             __dirname + '/../../package.json'
         ], parse_packagejson);
     } catch (e) {
-        exports.fatal('Could not detect ' + app + ' version');
+        cli.fatal('Could not detect ' + app + ' version');
     }
 };
 
-exports.setUsage = function (u) {
+cli.setUsage = function (u) {
     usage = u;
 };
 
-exports.getUsage = function () {
+cli.getUsage = function () {
     var short, desc, optional, line, seen_opts = [],
         switch_pad = 25;
     
@@ -334,8 +531,8 @@ exports.getUsage = function () {
         return str;
     };
 
-    var trunc_desc = function (prefix, desc, len) {
-        var pref_len = prefix.length,
+    var trunc_desc = function (pref, desc, len) {
+        var pref_len = pref.length,
             desc_len = 80 - pref_len, 
             truncated = '';
         
@@ -348,8 +545,7 @@ exports.getUsage = function () {
         while (desc_words.length) {
             truncated += (word = desc_words.shift()) + ' ';
             chars += word.length;
-            if (desc_words.length 
-                && chars + desc_words[0].length > desc_len) {
+            if (desc_words.length && chars + desc_words[0].length > desc_len) {
                 truncated += '\n' + pad(pref_len);
                 chars = 0;
             }
@@ -410,27 +606,40 @@ exports.getUsage = function () {
         seen_opts.push(short);
         seen_opts.push(long);
     }
-    if (enable_daemon && seen_opts.indexOf('d') === -1 && seen_opts.indexOf('daemon') === -1) {
-        console.log(pad('  -d, --daemon [ARG]', switch_pad) + 'Daemonize the process. Control the daemon using [start|stop|restart|log|pid]');
+    if (enable.timeout && seen_opts.indexOf('t') === -1 && seen_opts.indexOf('timeout') === -1) {
+        console.log(pad('  -t, --timeout N', switch_pad) + 'Exit if the process takes longer than N seconds');
     }
-    if (seen_opts.indexOf('v') === -1 && seen_opts.indexOf('version') === -1) {
+    if (enable.status) {
+		if (seen_opts.indexOf('s') === -1 && seen_opts.indexOf('silent') === -1) {
+			console.log(pad('  -s, --silent', switch_pad) + 'Hide all status messages');
+		}
+		if (seen_opts.indexOf('debug') === -1) {
+			console.log(pad('      --debug', switch_pad) + 'Show debug information');
+		}
+	} 
+    if (enable.catchall && seen_opts.indexOf('c') === -1 && seen_opts.indexOf('catch') === -1) {
+        console.log(pad('  -c, --catch', switch_pad) + 'Catch unanticipated errors');
+    }
+    if (enable.daemon && seen_opts.indexOf('d') === -1 && seen_opts.indexOf('daemon') === -1) {
+        console.log(pad('  -d, --daemon [ARG]', switch_pad) + 'Daemonize the process. Control the daemon using [start, stop, restart, log, pid]');
+    }
+    if (enable.version && seen_opts.indexOf('v') === -1 && seen_opts.indexOf('version') === -1) {
         console.log(pad('  -v, --version', switch_pad) + 'Display the current version');
     }
-    if (seen_opts.indexOf('h') === -1 && seen_opts.indexOf('help') === -1) {
+    if (enable.help && seen_opts.indexOf('h') === -1 && seen_opts.indexOf('help') === -1) {
         console.log(pad('  -h, --help', switch_pad) + 'Display help and usage details');
     }
     process.exit();
 };
 
-exports.getOptError = function (expects, type) {
+cli.getOptError = function (expects, type) {
     var err = full_opt + ' expects ' + expects 
             + '. Use `' + app + ' ' + full_opt + (is_long ? '=' : ' ') + type + '`';
     return err;
 };
 
-exports.getValue = function (default_val, validate_func, err_msg) {
-    
-    err_msg = err_msg || exports.getOptError('a value', 'VALUE');
+cli.getValue = function (default_val, validate_func, err_msg) {
+    err_msg = err_msg || cli.getOptError('a value', 'VALUE');
     
     var value;
     
@@ -468,79 +677,79 @@ exports.getValue = function (default_val, validate_func, err_msg) {
         if (value) {
             argv.unshift(value);
         }
-        return default_val || exports.fatal(err_msg);
+        return default_val || cli.fatal(err_msg);
         
     }
     
     return value;
 };
 
-exports.getInt = function (default_val) {
-    return exports.getValue(default_val, function (value) {
+cli.getInt = function (default_val) {
+    return cli.getValue(default_val, function (value) {
         if (!value.match(/^(?:-?(?:0|[1-9][0-9]*))$/)) {
             throw 'Invalid int';
         }
         return parseInt(value, 10);
-    }, exports.getOptError('a number', 'NUMBER'));
+    }, cli.getOptError('a number', 'NUMBER'));
 }
 
-exports.getFloat = function (default_val) {
-    return exports.getValue(default_val, function (value) {
+cli.getFloat = function (default_val) {
+    return cli.getValue(default_val, function (value) {
         if (!value.match(/^(?:-?(?:0|[1-9][0-9]*))?(?:\.[0-9]*)?$/)) {
             throw 'Invalid float';
         }
         return parseFloat(value, 10);
-    }, exports.getOptError('a number', 'NUMBER'));
+    }, cli.getOptError('a number', 'NUMBER'));
 }
 
-exports.getUrl = function (default_val, identifier) {
+cli.getUrl = function (default_val, identifier) {
     identifier = identifier || 'url';
-    return exports.getValue(default_val, function (value) {
+    return cli.getValue(default_val, function (value) {
         if (!value.match(/^(?:(?:ht|f)tp(?:s?)\:\/\/|~\/|\/)?(?:\w+:\w+@)?((?:(?:[-\w\d{1-3}]+\.)+(?:com|org|net|gov|mil|biz|info|mobi|name|aero|jobs|edu|co\.uk|ac\.uk|it|fr|tv|museum|asia|local|travel|[a-z]{2})?)|((\b25[0-5]\b|\b[2][0-4][0-9]\b|\b[0-1]?[0-9]?[0-9]\b)(\.(\b25[0-5]\b|\b[2][0-4][0-9]\b|\b[0-1]?[0-9]?[0-9]\b)){3}))(?::[\d]{1,5})?(?:(?:(?:\/(?:[-\w~!$+|.,=]|%[a-f\d]{2})+)+|\/)+|\?|#)?(?:(?:\?(?:[-\w~!$+|.,*:]|%[a-f\d{2}])+=?(?:[-\w~!$+|.,*:=]|%[a-f\d]{2})*)(?:&(?:[-\w~!$+|.,*:]|%[a-f\d{2}])+=?(?:[-\w~!$+|.,*:=]|%[a-f\d]{2})*)*)*(?:#(?:[-\w~!$ |\/.,*:;=]|%[a-f\d]{2})*)?$/)) {
             throw 'Invalid URL';
         }
         return value;
-    }, exports.getOptError('a ' + identifier, identifier.toUpperCase()));
+    }, cli.getOptError('a ' + identifier, identifier.toUpperCase()));
 }
 
-exports.getEmail = function (default_val) {
-    return exports.getValue(default_val, function (value) {
+cli.getEmail = function (default_val) {
+    return cli.getValue(default_val, function (value) {
         if (!value.match(/^(?:[\w\!\#\$\%\&\'\*\+\-\/\=\?\^\`\{\|\}\~]+\.)*[\w\!\#\$\%\&\'\*\+\-\/\=\?\^\`\{\|\}\~]+@(?:(?:(?:[a-zA-Z0-9](?:[a-zA-Z0-9\-](?!\.)){0,61}[a-zA-Z0-9]?\.)+[a-zA-Z0-9](?:[a-zA-Z0-9\-](?!$)){0,61}[a-zA-Z0-9]?)|(?:\[(?:(?:[01]?\d{1,2}|2[0-4]\d|25[0-5])\.){3}(?:[01]?\d{1,2}|2[0-4]\d|25[0-5])\]))$/)) {
             throw 'Invalid email';
         }
         return value;
-    }, exports.getOptError('an email', 'EMAIL'));
+    }, cli.getOptError('an email', 'EMAIL'));
 }
 
-exports.getIp = function (default_val) {
-    return exports.getValue(default_val, function (value) {
+cli.getIp = function (default_val) {
+    return cli.getValue(default_val, function (value) {
         if (!value.match(/^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/)) {
             throw 'Invalid IP';
         }
         return value;
-    }, exports.getOptError('an IP', 'IP'));
+    }, cli.getOptError('an IP', 'IP'));
 }
 
-exports.getPath = function (default_val, identifier) {
+cli.getPath = function (default_val, identifier) {
     identifier = identifier || 'path';
-    return exports.getValue(default_val, function (value) {
+    return cli.getValue(default_val, function (value) {
         if (value.match(/[?*:;{}]/)) {
             throw 'Invalid path';
         }
         return value;
-    }, exports.getOptError('a ' + identifier, identifier.toUpperCase()));
+    }, cli.getOptError('a ' + identifier, identifier.toUpperCase()));
 }
 
-exports.getValueFromArr = function (default_val, arr) {
-    return exports.getValue(default_val, function (value) {
+cli.getArrayValue = function (arr, default_val) {
+    return cli.getValue(default_val, function (value) {
         if (arr.indexOf(value) === -1) {
             throw 'Unexpected value';
         }
         return value;
-    }, exports.getOptError('either [' + arr.join('|') + ']', 'VALUE'));
+    }, cli.getOptError('either [' + arr.join('|') + ']', 'VALUE'));
 }
 
-exports.withStdin = function (encoding, callback) {
+cli.withStdin = function (encoding, callback) {
     if (typeof encoding === 'function') {
         callback = encoding;
         encoding = 'utf8';
@@ -555,18 +764,18 @@ exports.withStdin = function (encoding, callback) {
     });
 };
 
-exports.withInput = function (encoding, callback) {
+cli.withInput = function (encoding, callback) {
     if (typeof encoding === 'function') {
         callback = encoding;
         encoding = 'utf8';
     }
     try {
-        if (!exports.args.length) {
+        if (!cli.args.length) {
             throw 'No args';
         }
-        var path = exports.args[0], data;
+        var path = cli.args[0], data;
         if (path.indexOf('/') === -1) {
-            path = cwd + '/' + path;
+            path = process.cwd() + '/' + path;
         }
         if (encoding === 'stream') {
             data = fs.createReadStream(path);
@@ -576,19 +785,19 @@ exports.withInput = function (encoding, callback) {
         callback(data);
     } catch (e) {
         //First arg isn't a file, read from STDIN instead
-        exports.withStdin.apply(this, arguments);
+        cli.withStdin.apply(this, arguments);
     }
 };
 
-exports.withStdinLines = function (callback) {
-    exports.withStdin(function (data) {
+cli.withStdinLines = function (callback) {
+    cli.withStdin(function (data) {
         var sep = data.indexOf('\r\n') !== -1 ? '\r\n' : '\n';
         callback(data.split(sep), sep);
     });
 };
 
-exports.withInputLines = function (callback) {
-    exports.withInput(function (data) {
+cli.withInputLines = function (callback) {
+    cli.withInput(function (data) {
         var sep = data.indexOf('\r\n') !== -1 ? '\r\n' : '\n';
         callback(data.split(sep), sep);
     });
@@ -604,18 +813,22 @@ exports.withInputLines = function (callback) {
  *      pid = outputs the daemon's PID if it is running
  *      log = outputs the daemon's log file (stdout + stderr)
  *
- * @param {String} arg
+ * @param {String} arg (Optional - default is 'start')
  * @param {Function} callback
  * @api public
  */
-exports.daemon = function (arg, callback) {
+cli.daemon = function (arg, callback) {
+	if (typeof daemon === 'undefined') {
+		cli.fatal('Daemon is not initialized');
+	}
+	
     if (typeof arg === 'function') {
         callback = arg;
         arg = 'start';
     }
     
-    lock_file = '/tmp/' + app + '.pid';
-    log_file = '/tmp/' + app + '.log';
+    var lock_file = '/tmp/' + app + '.pid',
+        log_file = '/tmp/' + app + '.log';
     
     var start = function () {
         daemon.run(log_file, lock_file, function (err) {
@@ -644,13 +857,11 @@ exports.daemon = function (arg, callback) {
 	case 'stop':
 		stop();
 		break;
-
 	case 'restart':
         daemon.stop(lock_file, function () {
             start();
         });
 		break;
-    
     case 'log':
         try {
             console.log(fs.readFileSync(log_file, 'utf8'));
@@ -658,7 +869,6 @@ exports.daemon = function (arg, callback) {
             return status('No daemon log file', 'error');
         };
         break;
-    
     case 'pid':
         try {
             var pid = fs.readFileSync(lock_file, 'utf8');
@@ -668,20 +878,88 @@ exports.daemon = function (arg, callback) {
             return status('Daemon is not running', 'error');
         };
         break;
-    
 	default:
         start();
         break;
     }
 }
 
-exports.main = function (callback) {
+/**
+ * The main entry method. Calling cli.main() is only necessary in
+ * scripts that have daemon support enabled.
+ *
+ * @param {Function} callback
+ * @api public
+ */
+cli.main = function (callback) {
     var after = function () {
-        callback.apply(exports, [exports.args, exports.options]);
+        callback.apply(cli, [cli.args, cli.options]);
     };
-    if (enable_daemon && daemon_arg) {
-        exports.daemon(daemon_arg, after);
+    if (enable.daemon && daemon_arg) {
+        cli.daemon(daemon_arg, after);
     } else {
         after();
     }
 }
+
+/**
+ * Bind kof's node-natives (https://github.com/kof/node-natives) to cli.native
+ * 
+ * Rather than requiring node natives (e.g. var path = require('path)), all
+ * native modules can be accessed like `cli.native.path`
+ *
+ * @param {String} name
+ */
+var define_native = function (name) {
+    Object.defineProperty(cli.native, name, {
+		enumerable : true,
+		configurable : true,
+		get: function() {
+			delete cli.native[name];
+			return cli.native[name] = require(name);
+		}
+    });
+}
+cli.native = {};
+var natives = process.binding('natives');
+for (var nat in natives) {
+    define_native(nat);
+}
+
+/**
+ * Bind creationix's stack (https://github.com/creationix/stack).
+ *
+ * Create a simple middleware stack by calling:
+ *
+ *     cli.createServer(middleware).listen(port);
+ */
+cli.createServer = function(/*layers*/) {
+	var defaultStackErrorHandler = function error(req, res, err) {
+		if (err) {
+			console.error(err.stack);
+			res.writeHead(500, {"Content-Type": "text/plain"});
+			res.end(err.stack + "\n");
+			return;
+		}
+		res.writeHead(404, {"Content-Type": "text/plain"});
+		res.end("Not Found\n");
+	};
+	var handle = error = defaultStackErrorHandler;
+	
+	Array.prototype.slice.call(arguments).reverse().forEach(function (layer) {
+		var child = handle;
+		handle = function (req, res) {
+			try {
+				layer(req, res, function (err) {
+					if (err) { 
+						return error(req, res, err); 
+					}
+					child(req, res);
+				});
+			} catch (err) {
+				error(req, res, err);
+			}
+		};
+	});
+	return http.createServer(handle);
+};
