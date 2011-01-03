@@ -3,13 +3,13 @@
 It includes:
 
 - A full featured opts/args parser
-- Support for plugins, such as daemon support (see below)
+- Support for plugins, such as daemon (see below)
 - Automatically build usage details with `-h,--help`
 - Auto-detect the app version from a nearby *package.json* when using `-v,--version`
 
 ## Example
 
-*echo.js* - similiar to the *nix *echo(1)*
+*echo.js* - similiar to *echo(1)*
 
     #!/usr/bin/env node
 
@@ -25,15 +25,14 @@ It includes:
     });
     
     cli.main(function (args, options) {
-        var output = '', argc = args.length,
-            i, l, output_stream;
+        var output = '', i, l, output_stream;
         
-        if (argc) {
+        if (this.argc) {
             if (options.escape) {
-                for (i = 0, l = argc; i < l; i++) {
-                    this.args[i].replace('\\n','\n')
-                                .replace('\\r','\r')
-                                .replace('\\t','\t');
+                for (i = 0, l = this.argc; i < l; i++) {
+                    args[i].replace('\\n','\n')
+                           .replace('\\r','\r')
+                           .replace('\\t','\t');
                 }
             }
             output += args.join(options.separator);
@@ -109,9 +108,9 @@ Adds methods to output stylized/colored status messages to the console `cli.info
 
 **daemon**  - *requires* `npm install daemon`
     
-Adds `-d,--daemon ARG` for daemonizing the process and controlling the resulting daemon (`ARG` defaults to `start`)
+Adds `-d,--daemon ARG` for daemonizing the process and controlling the resulting daemon
 
-`ARG` can be either start, stop, restart, pid (outputs the daemon's pid if it's running), or log (output the daemon's stdout+stderr)
+`ARG` can be either start (default), stop, restart, pid (outputs the daemon's pid if it's running), or log (output the daemon's stdout+stderr)
 
 **timeout**
 
