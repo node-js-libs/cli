@@ -44,6 +44,7 @@ cli.exit = process.exit;
 
 cli.options = {};
 cli.args = [];
+cli.argc = 0;
 
 /**
  * Define plugins. Plugins can be enabled / disabled by calling:
@@ -179,6 +180,7 @@ cli.setArgv = function (arr, keep_arg0) {
     //filter out opts
     argv_parsed = false;
     cli.args = argv = arr;
+    cli.argc = argv.length;
 };
 cli.setArgv(process.argv);
 
@@ -384,6 +386,7 @@ cli.parse = function (opts) {
 			parsed[opt] = null;
 		}
 	}
+    cli.argc = cli.args.length;
     return parsed;
 };
 
