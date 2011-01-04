@@ -787,6 +787,42 @@ cli.withStdinLines = function (callback) {
 };
 
 /**
+ * Gets each line from STDIN as it is recieved.
+ *
+ * @param {String} encoding (optional - default is 'utf8')
+ * @param {Function} callback
+ * @api public
+ */
+cli.forEachStdinLine = function (encoding, callback) {
+    if (typeof encoding === 'function') {
+        callback = encoding;
+        encoding = 'utf8';
+    }
+    var stream = process.openStdin(),
+        data = '',
+        sep, processData;
+    stream.setEncoding(encoding);
+    processData = function (eof) {
+        if (sep === undefined && data.indexOf('\r\n') !== -1) sep = '\r\n';
+        if (sep === undefined && data.indexOf('\n') !== -1) sep = '\n';
+        if (sep) {
+            var lines = data.split(sep);
+            data = eof ? null : lines.pop();
+            lines.forEach(function (line) {
+                callback.apply(cli, [line, sep, eof]);
+            });
+        }
+    };
+    stream.on('data', function (chunk) {
+        data += chunk;
+        processData();
+    });
+    stream.on('end', function () {
+        processData(true);
+    });
+};
+
+/**
  * A method for creating and controlling a daemon.
  *
  * `arg` can be:
