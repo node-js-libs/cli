@@ -1,85 +1,73 @@
-**cli is a tool for rapidly building NodeJS or CoffeeScript command line apps**
+**cli is a tool for rapidly building NodeJS command line apps**
 
 It includes:
 
 - A full featured opts/args parser
-- Support for plugins, such as daemon (see below)
+- Support for plugins (see below)
 - Automatically build usage details with `-h,--help`
 - Auto-detect the app version from a nearby *package.json* when using `-v,--version`
 
 ## Example
 
-*echo.js* - similiar to *echo(1)*
+*static.js* - a static file server with daemon support (requires `npm install creationix daemon`)
 
     #!/usr/bin/env node
 
-    //Enable the status plugin / disable the version plugin
-    var cli = require('cli').enable('status').disable('version');
-    
+    var cli = require('cli').enable('status','daemon').setVersion('0.1.0');
+
     cli.parse({
-        //long_opt: [short_opt, description, value_type, default_value]
-        newline: ['n', 'Do not output the trailing newline'],
-        escapes: ['e', 'Enable interpretation of backslash escapes'],
-        separator: ['s', 'Separate arguments using this value', 'string', ' '],
-        output: [false, 'Write to FILE rather than the console', 'file']
+        log:     ['l', 'Enable logging'],
+        port:    ['p', 'Listen on this port', 'number', 8080],
+        serve:   ['x', 'Serve static files from PATH', 'path', './public']
     });
-    
+
     cli.main(function (args, options) {
-        var output = '', i, l, output_stream;
+        var server, middleware = [];
         
-        if (this.argc) {
-            if (options.escape) {
-                for (i = 0, l = this.argc; i < l; i++) {
-                    args[i].replace('\\n','\n')
-                           .replace('\\r','\r')
-                           .replace('\\t','\t');
-                }
-            }
-            output += args.join(options.separator);
+        if (options.log) {
+            this.debug('Enabling logging');
+            middleware.push(require('creationix/log')());
+        }
+
+        if (options.serve) {
+            this.debug('Serving files from ' + options.serve);
+            middleware.push(require('creationix/static')('/', options.serve, 'index.html'));
         }
         
-        if (!options.newline) {
-            output += '\n';
-        }
+        server = this.createServer(middleware).listen(options.port);
         
-        try {
-            if (options.output) {
-                output_stream = this.native.fs.createWriteStream(options.output)
-            } else {
-                output_stream = process.stdout;
-            }
-            output_stream.write(output);
-        } catch (e) {
-            this.fatal('Could not write to output stream');
-        }
+        this.ok('Listening on port ' + options.port);
     });
     
 To output usage information
 
-    $ ./echo.js --help
+    $ ./static.js --help
     
-All of the following commands are equivalent and write `foo\tbar` to *out.txt*
-
-    $ ./echo.js -n -e --output=out.txt "foo\tbar"
-    $ ./echo.js --newline --escape --output "out.txt" "foo\tbar"
-    $ ./echo.js -ne --output=out.txt "foo\tbar"
-    $ ./echo.js -en --output=out.txt "foo\tbar"
-
-For those interested, [here is the same app written in CoffeeScript](https://gist.github.com/762999)
+For more examples, see ./examples
 
 ## Installation
 
-[cli.js](https://github.com/chriso/cli/raw/master/cli.js) is self-contained so that you can easily bundle the file with your app.
+[cli.js](https://github.com/chriso/cli/raw/master/cli.js) is self-contained module so that you can easily bundle it with your app.
 
 Alternatively, you can install cli with [npm](http://npmjs.org/)
 
     $ npm install cli
 
-## Plugins
+## Plugins / Addons
 
-Plugins can be enabled using `cli.enable(plugin1, [plugin2, ...]);`, and disabled using the equivalent `disable()`, e.g.
+cli comes bundled with kof's [node-natives](https://github.com/kof/node-natives) and creationix' [stack](https://github.com/creationix/stack)
 
-    cli.enable('daemon', 'status');
+To access any native node module, use
+
+    cli.native[module] //e.g. cli.native.path
+    
+To create a basic middleware stack, use
+
+    cli.createServer(middleware).listen(port)
+
+Plugins are a way of adding common opts and can be enabled using `cli.enable(plugin1, [plugin2, ...]);`, and disabled using the equivalent `disable()`, e.g.
+
+    cli.enable('daemon','status');
    
 Available plugins are:
 
@@ -119,18 +107,6 @@ Adds `-t,--timeout N` to exit the process after N seconds with an error
 **catchall**
 
 Adds `-c,--catch` to catch and output uncaughtExceptions and resume execution
-
-**Other bundled goodies**
-
-cli comes bundled with kof's [node-natives](https://github.com/kof/node-natives) and creationix' [stack](https://github.com/creationix/stack)
-
-To access any native node module, use
-
-    cli.native[module] //e.g. cli.native.path
-    
-To create a basic middleware stack, use
-
-    cli.createServer(middleware).listen(port)
 
 ## LICENSE
 
