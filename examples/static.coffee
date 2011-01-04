@@ -1,10 +1,6 @@
 #!/usr/bin/env coffee
 
-{parse, main, enable, setName, setVersion} = require 'cli'
-
-setName 'static.coffee'
-setVersion '0.1.0'
-enable 'daemon', 'status'
+{parse, main} = require('cli').enable('daemon','status').disable('version').setUsage('static.coffee [OPTIONS]')
 
 parse {
     log:     ['l', 'Enable logging']
