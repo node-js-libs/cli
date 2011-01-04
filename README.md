@@ -11,9 +11,10 @@ It includes a full featured opts/args parser + plugin support to add commonly us
     var cli = require('cli').enable('status','daemon').setVersion('0.1.0');
 
     cli.parse({
+        //long_opt: [short_opt, description, value_type, default_value]
         log:     ['l', 'Enable logging'],
         port:    ['p', 'Listen on this port', 'number', 8080],
-        serve:   ['x', 'Serve static files from PATH', 'path', './public']
+        serve:   [false, 'Serve static files from PATH', 'path', './public']
     });
 
     cli.main(function (args, options) {
