@@ -175,7 +175,7 @@ cli.setArgv = function (arr, keep_arg0) {
     cli.app = arr.shift();
     
     //Strip off argv[0] if it's 'node'
-    if (!keep_arg0 && 'node' === cli.app) {
+    if (!keep_arg0 && ('node' === cli.app || 'coffee' === cli.app)) {
         cli.app = arr.shift();
     }
     
