@@ -1,11 +1,12 @@
 **cli is a toolkit for rapidly building NodeJS command line apps - it includes:**
 
 - Full featured opts/args parser
-- Helper methods for working with stdin/stdout
+- Plugin support for adding common options and switches
+- Helper methods for working with stdin/stdout and spawning child processes
 
 Install using `npm install cli` or just bundle [cli.js](https://github.com/chriso/cli/raw/master/cli.js) with your app.
 
-## Examples
+## Example apps
 
 **sort.js** - Usage: `$ ./sort.js < input.txt`
 
@@ -68,6 +69,20 @@ Need to view the log? `$ ./static.js -d log`. Need to stop the daemon? `$ ./stat
 
 For more examples, see [./examples](https://github.com/chriso/cli/tree/master/examples)
 
+## Helper methods
+
+cli has helper methods for working with stdin and stdout
+
+    cli.withStdin(callback);        //callback receives stdin as a string
+    cli.withStdinLines(callback);   //callback receives (lines, newline) - newline is autodetected as \n or \r\n
+    cli.output(string);
+    
+To spawn a child process, use
+
+    cli.exec(cmd, callback); //callback receives the output of the process (split into lines)
+
+cli also comes bundled with kof's [node-natives](https://github.com/kof/node-natives) and creationix' [stack](https://github.com/creationix/stack)
+
 ## Plugins
 
 Plugins are a way of adding common opts and can be enabled using 
@@ -88,11 +103,11 @@ To set your own app name and version, use `cli.setApp(app_name, version)`
 
 Adds options to show/hide the stylized status messages that are output to the console when using one of these methods
 
-    cli.info(msg);
     cli.debug(msg);  //Only shown when using --debug
+    cli.error(msg);  
+    cli.fatal(msg);  //Exits the process after outputting msg
+    cli.info(msg);
     cli.ok(msg);
-    cli.error(msg);
-    cli.fatal(msg);
 
 `-s,--silent` will omit all status messages (except for fatal)
 
@@ -111,20 +126,6 @@ Adds `-t,--timeout N` to exit the process after N seconds with an error
 Adds `-c,--catch` to catch and output uncaughtExceptions and resume execution
 
 *Note: Plugins are automatically disabled if an option or switch of the same name is already defined*
-
-## Other helper methods
-
-cli has helper methods for working with stdin and stdout
-
-    cli.withStdin(callback);        //callback receives stdin as a string
-    cli.withStdinLines(callback);   //callback receives (lines, newline) - newline is autodetected as \n or \r\n
-    cli.output(string);
-    
-To spawn a child process, use
-
-    cli.exec(cmd, callback); //callback receives the output of the process (split into lines)
-
-cli also comes bundled with kof's [node-natives](https://github.com/kof/node-natives) and creationix' [stack](https://github.com/creationix/stack)
 
 ## LICENSE
 
