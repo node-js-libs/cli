@@ -16,10 +16,8 @@ cli.main(function (args, options) {
         middleware.push(require('creationix/log')());
     }
 
-    if (options.serve) {
-        this.debug('Serving files from ' + options.serve);
-        middleware.push(require('creationix/static')('/', options.serve, 'index.html'));
-    }
+    this.debug('Serving files from ' + options.serve);
+    middleware.push(require('creationix/static')('/', options.serve, 'index.html'));
     
     server = this.createServer(middleware).listen(options.port);
     

@@ -20,9 +20,8 @@ main (args, options) ->
         @debug 'Enabling logging'
         middleware.push require('creationix/log')()
 
-    if options.serve
-        @debug 'Serving files from ' + options.serve
-        middleware.push require('creationix/static')('/', options.serve, 'index.html')
+    @debug 'Serving files from ' + options.serve
+    middleware.push require('creationix/static')('/', options.serve, 'index.html')
     
     server = @createServer(middleware).listen(options.port)
     

@@ -11,7 +11,6 @@ It includes a full featured opts/args parser + plugin support to add commonly us
     var cli = require('cli').enable('status','daemon').setVersion('0.1.0');
 
     cli.parse({
-        //long_opt: [short_opt, description, value_type, default_value]
         log:     ['l', 'Enable logging'],
         port:    ['p', 'Listen on this port', 'number', 8080],
         serve:   [false, 'Serve static files from PATH', 'path', './public']
@@ -25,10 +24,8 @@ It includes a full featured opts/args parser + plugin support to add commonly us
             middleware.push(require('creationix/log')());
         }
 
-        if (options.serve) {
-            this.debug('Serving files from ' + options.serve);
-            middleware.push(require('creationix/static')('/', options.serve, 'index.html'));
-        }
+        this.debug('Serving files from ' + options.serve);
+        middleware.push(require('creationix/static')('/', options.serve, 'index.html'));
         
         server = this.createServer(middleware).listen(options.port);
         
