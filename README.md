@@ -54,17 +54,7 @@ Alternatively, you can install cli with [npm](http://npmjs.org/)
 
     $ npm install cli
 
-## Plugins / Addons
-
-cli comes bundled with kof's [node-natives](https://github.com/kof/node-natives) and creationix' [stack](https://github.com/creationix/stack)
-
-To access any native node module, use
-
-    cli.native[module] //e.g. cli.native.path
-    
-To create a basic middleware stack, use
-
-    cli.createServer(middleware).listen(port)
+## Plugins
 
 Plugins are a way of adding common opts and can be enabled using `cli.enable(plugin1, [plugin2, ...]);`, and disabled using the equivalent `disable()`, e.g.
 
@@ -108,6 +98,29 @@ Adds `-t,--timeout N` to exit the process after N seconds with an error
 **catchall**
 
 Adds `-c,--catch` to catch and output uncaughtExceptions and resume execution
+
+## Other helpers
+
+cli has helper methods for working with input (stdin). *callback* receives stdin either a string, or an array of input lines (where \n or \r\n is detected automatically)
+
+    cli.withStdin(callback)
+    cli.withStdinLines(callback)
+    
+To spawn a child process, use
+
+    cli.exec(cmd, callback)
+
+*callback* receives the output of the process (split into lines)
+ 
+cli also comes bundled with kof's [node-natives](https://github.com/kof/node-natives) and creationix' [stack](https://github.com/creationix/stack)
+
+To access any native node module, use
+
+    cli.native[module] //e.g. cli.native.path
+    
+To create a basic middleware stack, use
+
+    cli.createServer(middleware).listen(port)
 
 ## LICENSE
 
