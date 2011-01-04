@@ -1,11 +1,6 @@
 **cli is a tool for rapidly building NodeJS command line apps**
 
-It includes:
-
-- A full featured opts/args parser
-- Support for plugins (see below)
-- Automatically build usage details with `-h,--help`
-- Auto-detect the app version from a nearby *package.json* when using `-v,--version`
+It includes a full featured opts/args parser + plugin support to add commonly used options.
 
 ## Example
 
@@ -43,7 +38,13 @@ To output usage information
 
     $ ./static.js --help
     
-For more examples, see ./examples
+To create a daemon that serves files from /tmp, run
+
+    $ ./static.js -ld --serve=/tmp
+
+Need to view the log? run `$ ./static.js -d log`. Need to stop the daemon? run `$ ./static.js -d stop`. 
+    
+For more examples, see [./examples](https://github.com/chriso/cli/tree/master/examples).
 
 ## Installation
 
