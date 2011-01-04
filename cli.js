@@ -27,24 +27,29 @@
 var fs = require('fs'),
     path = require('path'),
     util = require('util'),
-	http = require('http'),
+    http = require('http'),
     childp = require('child_process');
 
 var cli = exports,
-    app, argv, curr_opt, curr_val, full_opt, is_long,
+    argv, curr_opt, curr_val, full_opt, is_long,
     short_tags = [], opt_list, parsed = {},
-    version, usage, eq, len, argv_parsed,
-	daemon, daemon_arg, hide_status, show_debug;
-	
-//cli inherits `console` and `process.exit`
+    usage, eq, len, argv_parsed,
+    daemon, daemon_arg, hide_status, show_debug,
+    replace, natives;
+
+cli.app = null;
+cli.version = null;
+cli.argv = [];
+cli.argc = 0;
+
+cli.options = {};
+cli.args = [];
+
+//cli inherits console.* and process.exit
 for (var i in console) {
     cli[i] = console[i];
 }
 cli.exit = process.exit;
-
-cli.options = {};
-cli.args = [];
-cli.argc = 0;
 
 /**
  * Define plugins. Plugins can be enabled / disabled by calling:
@@ -52,25 +57,25 @@ cli.argc = 0;
  *     `cli.enable(plugin1, [plugin2, ...])`
  *     `cli.disable(plugin1, [plugin2, ...])`
  * 
- * Methods are chainable, e.g. `cli.enable(plugin).disable(plugin2)`
+ * Methods are chainable - `cli.enable(plugin).disable(plugin2)`.
  *
  * The 'help' and 'version' plugins are enabled by default.
  */
 var enable = {
-	help: true, //Adds -h, --help
-	version: true, //Adds -v,--version
-	
-	//Adds -d,--daemon [ARG] => (see cli.daemon() below)
-	daemon: false, 
-	
-	//Adds -s,--silent & --debug => (see addStatusMethods() below)
-	status: false, 
-	
-	//Add -t,--timeout X => timeout the process after X seconds
-	timeout: false,
-	
-	//Adds -c,--catch => catch and output uncaughtExceptions
-	catchall: false,
+    help: true, //Adds -h, --help
+    version: true, //Adds -v,--version
+    
+    //Adds -d,--daemon [ARG] => (see cli.daemon() below)
+    daemon: false, 
+    
+    //Adds -s,--silent & --debug => (see addStatusMethods() below)
+    status: false, 
+    
+    //Add -t,--timeout X => timeout the process after X seconds
+    timeout: false,
+    
+    //Adds -c,--catch => catch and output uncaughtExceptions
+    catchall: false,
 }
 
 /**
@@ -80,35 +85,35 @@ var enable = {
  * @api public
  */
 cli.enable = function (/*plugins*/) {
-	Array.prototype.slice.call(arguments).forEach(function (plugin) {
-		switch (plugin) {
-		case 'daemon':
-			try {
-				daemon = require('daemon');
-				if (typeof daemon.start !== 'function') {
-					throw 'Invalid module';
-				}
-			} catch (e) {
-				cli.fatal('daemon not installed. Please run `npm install daemon`');
-			}
-			break;
-		case 'catchall':
-			process.on('uncaughtException', function (err) {
-				status('Uncaught exception: ' + (err.msg || err), 'error');
-			});
-			break;
-		case 'help': case 'version': 
-		case 'autocomplete': case 'timeout':
-			break;
-		case 'status':
-			addStatusMethods();
-			break;
-		default:
-			cli.fatal('Unknown plugin "' + plugin + '"');
-			break;
-		}
-		enable[plugin] = true;
-	});
+    Array.prototype.slice.call(arguments).forEach(function (plugin) {
+        switch (plugin) {
+        case 'daemon':
+            try {
+                daemon = require('daemon');
+                if (typeof daemon.start !== 'function') {
+                    throw 'Invalid module';
+                }
+            } catch (e) {
+                cli.fatal('daemon not installed. Please run `npm install daemon`');
+            }
+            break;
+        case 'catchall':
+            process.on('uncaughtException', function (err) {
+                status('Uncaught exception: ' + (err.msg || err), 'error');
+            });
+            break;
+        case 'help': case 'version': 
+        case 'autocomplete': case 'timeout':
+            break;
+        case 'status':
+            addStatusMethods();
+            break;
+        default:
+            cli.fatal('Unknown plugin "' + plugin + '"');
+            break;
+        }
+        enable[plugin] = true;
+    });
     return cli;
 }
 
@@ -119,16 +124,16 @@ cli.enable = function (/*plugins*/) {
  * @api public
  */
 cli.disable = function (/*plugins*/) {
-	Array.prototype.slice.call(arguments).forEach(function (plugin) {
-		if (enable[plugin]) {
-			enable[plugin] = false;
-		}
-	});
+    Array.prototype.slice.call(arguments).forEach(function (plugin) {
+        if (enable[plugin]) {
+            enable[plugin] = false;
+        }
+    });
     return cli;
 }
 
 /**
- * A wrapper for child_process.exec()
+ * A wrapper for child_process.exec().
  * 
  * If the child_process exits successfully, `callback` receives an array of 
  * stdout lines. The current process exits if the child process has an error 
@@ -166,26 +171,26 @@ cli.setArgv = function (arr, keep_arg0) {
         arr = arr.split(' ');
         //TODO: Parse argv strings with quoted args
     }
-    
-    app = arr.shift();
+
+    cli.app = arr.shift();
     
     //Strip off argv[0] if it's 'node'
-    if (!keep_arg0 && 'node' === app) {
-        app = arr.shift();
+    if (!keep_arg0 && 'node' === cli.app) {
+        cli.app = arr.shift();
     }
     
-    app = path.basename(app);
+    cli.app = path.basename(cli.app);
     
     //cli.args is initially equal to argv. A call to parse() or next() will
     //filter out opts
     argv_parsed = false;
-    cli.args = argv = arr;
+    cli.args = cli.argv = argv = arr;
     cli.argc = argv.length;
 };
 cli.setArgv(process.argv);
 
 /**
- * Returns the next short/long opt, or false if no opts are found.
+ * Returns the next opt, or false if no opts are found.
  *
  * @return {String} opt
  * @api public
@@ -211,7 +216,7 @@ cli.next = function () {
     
     curr_opt = argv.shift();
     
-    //If an escape sequence is found (- or --), subsequent opts are assumed to be args
+    //If an escape sequence is found (- or --), subsequent opts are ignored
     if (curr_opt === '-' || curr_opt === '--') {
         while (argv.length) {
             cli.args.push(argv.shift());
@@ -258,7 +263,7 @@ cli.next = function () {
  * Parses command line opts.
  *
  * `opts` must be an object with opts defined like:
- *		long_tag: [short_tag, description, value_type, default_value];
+ *        long_tag: [short_tag, description, value_type, default_value];
  *
  * The method returns:
  *      long_tag: value
@@ -274,12 +279,12 @@ cli.parse = function (opts) {
     opt_list = opts || {};
     while (o = cli.next()) {
         for (opt in opt_list) {
-			if (!(opt_list[opt] instanceof Array)) {
-				continue;
-			}
-			if (opt_list[opt][0] === false) {
-				opt_list[opt][0] = opt;
-			}
+            if (!(opt_list[opt] instanceof Array)) {
+                continue;
+            }
+            if (opt_list[opt][0] === false) {
+                opt_list[opt][0] = opt;
+            }
             if (o === opt || o === opt_list[opt][0]) {
                 if (opt_list[opt].length === 2) {
                     parsed[opt] = true;
@@ -335,6 +340,7 @@ cli.parse = function (opts) {
                 case 'url':
                 case 'uri':
                 case 'domain':
+                case 'host':
                     parsed[opt] = cli.getUrl(default_val, opt_list[opt][2]);
                     break;
                 case 'ip':
@@ -366,60 +372,61 @@ cli.parse = function (opts) {
                 //
             } else if (enable.status && (o === 's' || o === 'silent' || o === 'debug')) {
                 hide_status = (o === 's' || o === 'silent');
-				show_debug = o === 'debug';
+                show_debug = o === 'debug';
             } else if (enable.timeout && (o === 't' || o === 'timeout')) {
-				var secs = cli.getInt();
+                var secs = cli.getInt();
                 setTimeout(function () {
-					cli.fatal('Process timed out after ' + secs + 's');
-				}, secs * 1000);
+                    cli.fatal('Process timed out after ' + secs + 's');
+                }, secs * 1000);
             } else {
                 cli.fatal('Unknown option ' + full_opt);
             }
         }   
     }
-	//Fill the remaining options
-	for (opt in opt_list) {
-		if (!(opt_list[opt] instanceof Array)) {
-			parsed[opt] = opt_list[opt];
-			continue;
-		} else if (typeof parsed[opt] === 'undefined') {
-			parsed[opt] = null;
-		}
-	}
+    //Fill the remaining options with their default value or null
+    for (opt in opt_list) {
+        default_val = opt_list[opt].length === 4 ? opt_list[opt][3] : null;
+        if (!(opt_list[opt] instanceof Array)) {
+            parsed[opt] = opt_list[opt];
+            continue;
+        } else if (typeof parsed[opt] === 'undefined') {
+            parsed[opt] = default_val;
+        }
+    }
     cli.argc = cli.args.length;
     return parsed;
 };
 
 /**
  * Adds methods to output styled status messages to the console. To enable
- * status methods, use `cli.enable('status')`
+ * status methods, use `cli.enable('status')`.
  *
  * Added methods are cli.info(msg), cli.error(msg), cli.ok(msg), and 
- * cli.debug(msg)
+ * cli.debug(msg).
  *
  * Note: 
  *    1) debug() messages are hidden by default. Display them with 
- *       the --debug opt
- *    2) to hide all status messages, use the -s,--silent opt.
+ *       the --debug opt.
+ *    2) to hide all status messages, use the -s or --silent opt.
  * 
  * @api private
  */
 var addStatusMethods = function () {
-	['info', 'error', 'ok', 'debug'].forEach(function (type) {
-		cli[type] = function (msg) {
-			status(msg, type);
-		};
-	});
+    ['info', 'error', 'ok', 'debug'].forEach(function (type) {
+        cli[type] = function (msg) {
+            status(msg, type);
+        };
+    });
 };
 
 /**
- * Exit the process with a message and status: 1
+ * Exit the process with a message and status of 1.
  * 
  * @param {String} msg
  * @api public
  */
 cli.fatal = function (msg) {
-	status(msg, 'fatal');
+    status(msg, 'fatal');
 }
 
 /**
@@ -449,41 +456,63 @@ var status = function (msg, type) {
         break; 
     }
     if (type === 'fatal') {
-		console.error(msg);
+        console.error(msg);
         process.exit(1);
     }
     if (hide_status || (!show_debug && type === 'debug')) {
         return;
     }
     if (type === 'error') {
-		console.error(msg);
-	} else {
-		console.log(msg);
-	}
+        console.error(msg);
+    } else {
+        console.log(msg);
+    }
 };
 
+/**
+ * Sets the app version. `v` can be the version number, or a path 
+ * to package.json. If this method is not called, cli will attempt
+ * to locate a package.json in ./, ../ or ../../
+ * 
+ * @param {String} v
+ * @return cli (for chaining)
+ * @api public
+ */
 cli.setVersion = function (v) {
     if (v.indexOf('package.json')) {
         cli.parsePackageJson(v);
     } else {
-        version = v;
+        cli.version = v;
     }
     return cli;
 };
 
+/**
+ * Gets the app version. If setVersion has not been called cli will attempt 
+ * to locate a package.json in ./, ../ or ../../
+ * 
+ * @api public
+ */
 cli.getVersion = function () {
-    if (typeof version === 'undefined') {
+    if (typeof cli.version === 'undefined') {
         //Look for a package.json
         cli.parsePackageJson();
     }
-    console.log(app + ' v' + version);
+    console.log(cli.app + ' v' + cli.version);
     process.exit();
 };
 
+/**
+ * Parses the version number from package.json. If no path is specified, cli 
+ * will attempt to locate a package.json in ./, ../ or ../../
+ * 
+ * @param {String} path (optional)
+ * @api public
+ */
 cli.parsePackageJson = function (path) {
     var parse_packagejson = function (path) {
         var packagejson = JSON.parse(fs.readFileSync(path, 'utf8'));
-        version = packagejson.version;
+        cli.version = packagejson.version;
     };
     
     var try_all = function (arr, func, err) {
@@ -510,14 +539,27 @@ cli.parsePackageJson = function (path) {
             __dirname + '/../../package.json'
         ], parse_packagejson);
     } catch (e) {
-        cli.fatal('Could not detect ' + app + ' version');
+        cli.fatal('Could not detect ' + cli.app + ' version');
     }
 };
 
+/**
+ * Sets the USAGE: string - default is `app [OPTIONS] [ARGS]`.
+ * 
+ * @param {String} u
+ * @return cli (for chaining)
+ * @api public
+ */
 cli.setUsage = function (u) {
     usage = u;
 };
 
+/**
+ * Automatically build usage information from the opts list. If the help 
+ * plugin is enabled (default), this info is displayed with -h, --help.
+ * 
+ * @api public
+ */
 cli.getUsage = function () {
     var short, desc, optional, line, seen_opts = [],
         switch_pad = 25;
@@ -557,7 +599,7 @@ cli.getUsage = function () {
         return truncated;
     };
         
-    usage = usage || app + ' [OPTIONS] [ARGS]';
+    usage = usage || cli.app + ' [OPTIONS] [ARGS]';
     console.log('\x1b[1mUsage\x1b[0m:\n  ' + usage);
     console.log('\n\x1b[1mOptions\x1b[0m: ');
     for (opt in opt_list) {
@@ -613,13 +655,13 @@ cli.getUsage = function () {
         console.log(pad('  -t, --timeout N', switch_pad) + 'Exit if the process takes longer than N seconds');
     }
     if (enable.status) {
-		if (seen_opts.indexOf('s') === -1 && seen_opts.indexOf('silent') === -1) {
-			console.log(pad('  -s, --silent', switch_pad) + 'Hide all status messages');
-		}
-		if (seen_opts.indexOf('debug') === -1) {
-			console.log(pad('      --debug', switch_pad) + 'Show debug information');
-		}
-	} 
+        if (seen_opts.indexOf('s') === -1 && seen_opts.indexOf('silent') === -1) {
+            console.log(pad('  -s, --silent', switch_pad) + 'Hide all status messages');
+        }
+        if (seen_opts.indexOf('debug') === -1) {
+            console.log(pad('      --debug', switch_pad) + 'Show debug information');
+        }
+    } 
     if (enable.catchall && seen_opts.indexOf('c') === -1 && seen_opts.indexOf('catch') === -1) {
         console.log(pad('  -c, --catch', switch_pad) + 'Catch unanticipated errors');
     }
@@ -635,12 +677,29 @@ cli.getUsage = function () {
     process.exit();
 };
 
+/**
+ * Generates an error message when an opt is incorrectly used.
+ * 
+ * @param {String} expects (e.g. 'a value')
+ * @param {String} type (e.g. 'VALUE')
+ * @api public
+ */
 cli.getOptError = function (expects, type) {
     var err = full_opt + ' expects ' + expects 
-            + '. Use `' + app + ' ' + full_opt + (is_long ? '=' : ' ') + type + '`';
+            + '. Use `' + cli.app + ' ' + full_opt + (is_long ? '=' : ' ') + type + '`';
     return err;
 };
 
+/**
+ * Gets the next opt value and validates it with an optional validation
+ * function. If validation fails or no value can be obtained, this method
+ * will return the default value (if specified) or exit with err_msg.
+ * 
+ * @param {String} default_val
+ * @param {Function} validate_func
+ * @param {String} err_msg
+ * @api public
+ */
 cli.getValue = function (default_val, validate_func, err_msg) {
     err_msg = err_msg || cli.getOptError('a value', 'VALUE');
     
@@ -752,6 +811,13 @@ cli.getArrayValue = function (arr, default_val) {
     }, cli.getOptError('either [' + arr.join('|') + ']', 'VALUE'));
 }
 
+/**
+ * Gets all data from STDIN (with optional encoding) and sends it to callback.
+ * 
+ * @param {String} encoding (optional - default is 'utf8')
+ * @param {Function} callback
+ * @api public
+ */
 cli.withStdin = function (encoding, callback) {
     if (typeof encoding === 'function') {
         callback = encoding;
@@ -767,6 +833,15 @@ cli.withStdin = function (encoding, callback) {
     });
 };
 
+/**
+ * Gets all data from an input file or STDIN when apps are in the form of either:
+ *     app input_file.txt
+ *     app < input_file.txt
+ * 
+ * @param {String} encoding (optional - default is 'utf8')
+ * @param {Function} callback
+ * @api public
+ */
 cli.withInput = function (encoding, callback) {
     if (typeof encoding === 'function') {
         callback = encoding;
@@ -792,6 +867,13 @@ cli.withInput = function (encoding, callback) {
     }
 };
 
+/**
+ * Gets all data from STDIN, splits the data into lines and sends it 
+ * to callback.
+ * 
+ * @param {Function} callback
+ * @api public
+ */
 cli.withStdinLines = function (callback) {
     cli.withStdin(function (data) {
         var sep = data.indexOf('\r\n') !== -1 ? '\r\n' : '\n';
@@ -799,6 +881,12 @@ cli.withStdinLines = function (callback) {
     });
 };
 
+/**
+ * See withInput().
+ * 
+ * @param {Function} callback
+ * @api public
+ */
 cli.withInputLines = function (callback) {
     cli.withInput(function (data) {
         var sep = data.indexOf('\r\n') !== -1 ? '\r\n' : '\n';
@@ -821,17 +909,17 @@ cli.withInputLines = function (callback) {
  * @api public
  */
 cli.daemon = function (arg, callback) {
-	if (typeof daemon === 'undefined') {
-		cli.fatal('Daemon is not initialized');
-	}
-	
+    if (typeof daemon === 'undefined') {
+        cli.fatal('Daemon is not initialized');
+    }
+    
     if (typeof arg === 'function') {
         callback = arg;
         arg = 'start';
     }
     
-    var lock_file = '/tmp/' + app + '.pid',
-        log_file = '/tmp/' + app + '.log';
+    var lock_file = '/tmp/' + cli.app + '.pid',
+        log_file = '/tmp/' + cli.app + '.log';
     
     var start = function () {
         daemon.run(log_file, lock_file, function (err) {
@@ -857,14 +945,14 @@ cli.daemon = function (arg, callback) {
     };
     
     switch(arg) {
-	case 'stop':
-		stop();
-		break;
-	case 'restart':
+    case 'stop':
+        stop();
+        break;
+    case 'restart':
         daemon.stop(lock_file, function () {
             start();
         });
-		break;
+        break;
     case 'log':
         try {
             console.log(fs.readFileSync(log_file, 'utf8'));
@@ -881,7 +969,7 @@ cli.daemon = function (arg, callback) {
             return status('Daemon is not running', 'error');
         };
         break;
-	default:
+    default:
         start();
         break;
     }
@@ -889,7 +977,7 @@ cli.daemon = function (arg, callback) {
 
 /**
  * The main entry method. Calling cli.main() is only necessary in
- * scripts that have daemon support enabled.
+ * scripts that have daemon support enabled. `callback` receives (args, options)
  *
  * @param {Function} callback
  * @api public
@@ -915,16 +1003,16 @@ cli.main = function (callback) {
  */
 var define_native = function (name) {
     Object.defineProperty(cli.native, name, {
-		enumerable : true,
-		configurable : true,
-		get: function() {
-			delete cli.native[name];
-			return cli.native[name] = require(name);
-		}
+        enumerable : true,
+        configurable : true,
+        get: function() {
+            delete cli.native[name];
+            return cli.native[name] = require(name);
+        }
     });
 }
 cli.native = {};
-var natives = process.binding('natives');
+natives = process.binding('natives');
 for (var nat in natives) {
     define_native(nat);
 }
@@ -935,34 +1023,53 @@ for (var nat in natives) {
  * Create a simple middleware stack by calling:
  *
  *     cli.createServer(middleware).listen(port);
+ *
+ * @return {Server} server
+ * @api public
  */
 cli.createServer = function(/*layers*/) {
-	var defaultStackErrorHandler = function error(req, res, err) {
-		if (err) {
-			console.error(err.stack);
-			res.writeHead(500, {"Content-Type": "text/plain"});
-			res.end(err.stack + "\n");
-			return;
-		}
-		res.writeHead(404, {"Content-Type": "text/plain"});
-		res.end("Not Found\n");
-	};
-	var handle = error = defaultStackErrorHandler;
-	
-	Array.prototype.slice.call(arguments).reverse().forEach(function (layer) {
-		var child = handle;
-		handle = function (req, res) {
-			try {
-				layer(req, res, function (err) {
-					if (err) { 
-						return error(req, res, err); 
-					}
-					child(req, res);
-				});
-			} catch (err) {
-				error(req, res, err);
-			}
-		};
-	});
-	return http.createServer(handle);
+    var defaultStackErrorHandler = function error(req, res, err) {
+        if (err) {
+            console.error(err.stack);
+            res.writeHead(500, {"Content-Type": "text/plain"});
+            res.end(err.stack + "\n");
+            return;
+        }
+        res.writeHead(404, {"Content-Type": "text/plain"});
+        res.end("Not Found\n");
+    };
+    var handle = error = defaultStackErrorHandler;
+    
+    Array.prototype.slice.call(arguments).reverse().forEach(function (layer) {
+        var child = handle;
+        handle = function (req, res) {
+            try {
+                layer(req, res, function (err) {
+                    if (err) { 
+                        return error(req, res, err); 
+                    }
+                    child(req, res);
+                });
+            } catch (err) {
+                error(req, res, err);
+            }
+        };
+    });
+    return http.createServer(handle);
 };
+
+/**
+ * Inteprets and replaces backslash escapes in a string.
+ *
+ * @param {String} str
+ * @return {String} replaced
+ * @api public
+ */
+replace = {'\\n':'\n','\\r':'\r','\\t':'\t','\\e':'\e','\\v':'\v','\\f':'\f','\\c':'\c','\\b':'\b','\\a':'\a','\\\\':'\\'};
+cli.escape = function (str) {
+    string += '';
+    for (var i in replace) {
+        string = string.replace(i, replace[i]);
+    }
+    return string;
+}
