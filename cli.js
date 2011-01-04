@@ -566,6 +566,7 @@ cli.parsePackageJson = function (path) {
  */
 cli.setUsage = function (u) {
     usage = u;
+    return cli;
 };
 
 /**
