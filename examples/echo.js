@@ -7,7 +7,7 @@
     $ ./echo.js -en --output="out.txt" "foo\tbar"
 */
 
-var cli = require('../cli').enable('status').disable('version');
+var cli = require('cli').enable('status').disable('version');
 
 cli.parse({
     newline: ['n', 'Do not output the trailing newline'],

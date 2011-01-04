@@ -1,6 +1,6 @@
 #!/usr/bin/env coffee
 
-{parse, main, enable, disable} = require '../cli'
+{parse, main, enable, disable} = require 'cli'
 
 enable 'status'
 disable 'version'

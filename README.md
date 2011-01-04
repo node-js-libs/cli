@@ -43,7 +43,9 @@ To create a daemon that serves files from /tmp, run
 
     $ ./static.js -ld --serve=/tmp
 
-Need to view the log? run `$ ./static.js -d log`. Need to stop the daemon? run `$ ./static.js -d stop`. 
+Need to view the log? `$ ./static.js -d log`. Need to stop the daemon? `$ ./static.js -d stop`. 
+
+For those interested, [here is the same app written in CoffeeScript](https://github.com/chriso/cli/blob/master/examples/static.coffee).
     
 For more examples, see [./examples](https://github.com/chriso/cli/tree/master/examples).
 
