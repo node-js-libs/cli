@@ -75,6 +75,7 @@ cli has helper methods for working with stdin and stdout
 
     cli.withStdin(callback);        //callback receives stdin as a string
     cli.withStdinLines(callback);   //callback receives (lines, newline) - newline is autodetected as \n or \r\n
+    cli.forEachStdinLine(callback); //callback recieves (line, newline, end) - newline is autodetected as \n or \r\n
     cli.output(string);
     
 To spawn a child process, use
