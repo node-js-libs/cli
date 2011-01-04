@@ -1,34 +1,43 @@
-**cli is a tool for rapidly building NodeJS command line apps**
+**cli is a toolkit for rapidly building NodeJS command line apps**
 
-It includes a full featured opts/args parser + plugin support to add commonly used options.
+Install with npm `npm install cli` or just bundle [cli.js](https://github.com/chriso/cli/raw/master/cli.js) with your app.
 
-## Examples
+### Examples
 
-**sort.js**
+**sort.js** - Usage: `$ ./sort.js < input.txt`
 
     #!/usr/bin/env node
-    
-    require('cli').withStdinLines(function (lines, newline) {
+    require('cli').withStdinLines(function(lines, newline) {
         this.output(lines.sort().join(newline));
     });
     
-Try it out
+Let's quickly add support for an `-n` switch to use a numeric sort, and a `-r` switch to reverse output
+    
+    var cli = require('cli'), options = cli.parse();
+    
+    cli.withStdinLines(function(lines, newline) {
+        lines.sort(!options.n ? null : function (a, b) {
+            return parseInt(a) > parseInt(b);
+        });
+        if (options.r) lines.reverse();
+        this.output(lines.join(newline));
+    });
 
-    ./sort.js < input.txt
+Now let's create a static file server with daemon support to see the opts parser + plugins in use.
 
-**static.js** - a static file server with daemon support (requires `npm install creationix daemon`)
+**static.js** - requires `npm install creationix daemon`
 
     #!/usr/bin/env node
 
-    var cli = require('cli').enable('status','daemon');
+    var cli = require('cli').enable('daemon', 'status'); //Enable 2 plugins
 
-    var options = cli.parse({
-        log:     ['l', 'Enable logging'],
-        port:    ['p', 'Listen on this port', 'number', 8080],
-        serve:   [false, 'Serve static files from PATH', 'path', './public']
+    cli.parse({
+        log:   ['l', 'Enable logging'],
+        port:  ['p', 'Listen on this port', 'number', 8080],
+        serve: [false, 'Serve static files from PATH', 'path', './public']
     });
 
-    cli.main(function () {
+    cli.main(function (args, options) {
         var server, middleware = [];
         
         if (options.log) {
@@ -55,20 +64,12 @@ To create a daemon that serves files from /tmp, run
 Need to view the log? `$ ./static.js -d log`. Need to stop the daemon? `$ ./static.js -d stop`. 
 
 For those interested, [here is the same app written in CoffeeScript](https://github.com/chriso/cli/blob/master/examples/static.coffee).
-    
+
 For more examples, see [./examples](https://github.com/chriso/cli/tree/master/examples).
-
-## Installation
-
-[cli.js](https://github.com/chriso/cli/raw/master/cli.js) is self-contained module so that you can easily bundle it with your app.
-
-Alternatively, you can install cli with [npm](http://npmjs.org/)
-
-    $ npm install cli
 
 ## Plugins
 
-Plugins are a way of adding common opts and can be enabled using `cli.enable(plugin1, [plugin2, ...]);`, and disabled using the equivalent `disable()`, e.g.
+Plugins are a way of adding common options and can be enabled using `cli.enable(plugin1, [plugin2, ...]);`, and disabled using the equivalent `disable()`, e.g.
 
     cli.enable('daemon','status');
    
@@ -78,22 +79,21 @@ Available plugins are:
 
 Adds `-h,--help` to output auto-generated usage information
 
-**version** - *enabled by default*
+**version**
 
-Adds `-v,--version` to output version information for the app.
+Adds `-v,--version` to output version information for the app. cli will attempt to locate and parse a nearby *package.json*
 
-Set the version using
-
-    cli.setVersion(version) //OR
-    cli.setVersion(path_to_packagejson);
-    
-If setVersion isn't called, cli will attempt to locate *package.json* in `./`, `../`, or `../../`
+To set your own app name and version, use `cli.setApp(app_name, version)`
 
 **status**
 
-Adds methods to output stylized/colored status messages to the console `cli.info(msg)`, `cli.debug(msg)`, `cli.ok(msg)`, `cli.error(msg)`, `cli.fatal(msg)`
+Adds options to show/hide the stylized status messages that are output to the console when using one of these methods
 
-`--debug` is required to show any messages output with `cli.debug(msg)`
+    cli.info(msg);
+    cli.debug(msg);  //Only shown when using --debug
+    cli.ok(msg);
+    cli.error(msg);
+    cli.fatal(msg);
 
 `-s,--silent` will omit all status messages (except for fatal)
 
@@ -111,28 +111,18 @@ Adds `-t,--timeout N` to exit the process after N seconds with an error
 
 Adds `-c,--catch` to catch and output uncaughtExceptions and resume execution
 
-## Other helpers
+## Other helper methods
 
-cli has helper methods for working with input (stdin). *callback* receives stdin either a string, or an array of input lines (where \n or \r\n is detected automatically)
+cli has helper methods for working with *stdin*
 
-    cli.withStdin(callback)
-    cli.withStdinLines(callback)
+    cli.withStdin(callback);        //callback receives stdin as a string
+    cli.withStdinLines(callback);   //callback receives (lines, newline) - newline is autodetected as \n or \r\n
     
 To spawn a child process, use
 
-    cli.exec(cmd, callback)
+    cli.exec(cmd, callback); //callback receives the output of the process (split into lines)
 
-*callback* receives the output of the process (split into lines)
- 
 cli also comes bundled with kof's [node-natives](https://github.com/kof/node-natives) and creationix' [stack](https://github.com/creationix/stack)
-
-To access any native node module, use
-
-    cli.native[module] //e.g. cli.native.path
-    
-To create a basic middleware stack, use
-
-    cli.createServer(middleware).listen(port)
 
 ## LICENSE
 
