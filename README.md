@@ -2,7 +2,19 @@
 
 It includes a full featured opts/args parser + plugin support to add commonly used options.
 
-## Example
+## Examples
+
+*sort.js*
+
+    #!/usr/bin/env node
+    
+    require('cli').withStdinLines(function (lines, newline) {
+        this.output(lines.sort().join(newline));
+    });
+    
+Try it out
+
+    ./sort.js < input.txt
 
 *static.js* - a static file server with daemon support (requires `npm install creationix daemon`)
 

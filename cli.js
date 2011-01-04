@@ -49,6 +49,7 @@ cli.args = [];
 for (var i in console) {
     cli[i] = console[i];
 }
+cli.output = console.log;
 cli.exit = process.exit;
 
 /**
@@ -844,7 +845,7 @@ cli.withStdin = function (encoding, callback) {
         data += chunk;
     });
     stream.on('end', function () {
-        callback(data);
+        callback.apply(cli, [data]);
     });
 };
 
@@ -875,7 +876,7 @@ cli.withInput = function (encoding, callback) {
         } else {
             data = fs.readFileSync(path, encoding);
         }
-        callback(data);
+        callback.apply(cli, [data]);
     } catch (e) {
         //First arg isn't a file, read from STDIN instead
         cli.withStdin.apply(this, arguments);
@@ -892,7 +893,7 @@ cli.withInput = function (encoding, callback) {
 cli.withStdinLines = function (callback) {
     cli.withStdin(function (data) {
         var sep = data.indexOf('\r\n') !== -1 ? '\r\n' : '\n';
-        callback(data.split(sep), sep);
+        callback.apply(cli, [data.split(sep), sep]);
     });
 };
 
@@ -905,7 +906,7 @@ cli.withStdinLines = function (callback) {
 cli.withInputLines = function (callback) {
     cli.withInput(function (data) {
         var sep = data.indexOf('\r\n') !== -1 ? '\r\n' : '\n';
-        callback(data.split(sep), sep);
+        callback.apply(cli, [data.split(sep), sep]);
     });
 };
 
