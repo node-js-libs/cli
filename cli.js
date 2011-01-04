@@ -275,9 +275,10 @@ cli.next = function () {
  * @api public
  */
 cli.parse = function (opts) {
-    var default_val, i, parsed = cli.options;
+    var default_val, i, parsed = cli.options, seen;
     opt_list = opts || {};
     while (o = cli.next()) {
+        seen = false;
         for (opt in opt_list) {
             if (!(opt_list[opt] instanceof Array)) {
                 continue;
@@ -286,6 +287,7 @@ cli.parse = function (opts) {
                 opt_list[opt][0] = opt;
             }
             if (o === opt || o === opt_list[opt][0]) {
+                seen = true;
                 if (opt_list[opt].length === 2) {
                     parsed[opt] = true;
                     break;
@@ -361,7 +363,7 @@ cli.parse = function (opts) {
                 break;
             }
         }
-        if (typeof parsed[opt] === 'undefined') {
+        if (!seen) {
             if (enable.version && (o === 'v' || o === 'version')) {
                 cli.getVersion();
             } else if (enable.help && (o === 'h' || o === 'help')) {
@@ -381,7 +383,7 @@ cli.parse = function (opts) {
             } else {
                 cli.fatal('Unknown option ' + full_opt);
             }
-        }   
+        }
     }
     //Fill the remaining options with their default value or null
     for (opt in opt_list) {
@@ -479,7 +481,7 @@ var status = function (msg, type) {
  * @api public
  */
 cli.setVersion = function (v) {
-    if (v.indexOf('package.json')) {
+    if (v.indexOf('package.json') !== -1) {
         cli.parsePackageJson(v);
     } else {
         cli.version = v;
@@ -656,7 +658,7 @@ cli.getUsage = function () {
     }
     if (enable.status) {
         if (seen_opts.indexOf('s') === -1 && seen_opts.indexOf('silent') === -1) {
-            console.log(pad('  -s, --silent', switch_pad) + 'Hide all status messages');
+            console.log(pad('  -s, --silent', switch_pad) + 'Hide all console status messages');
         }
         if (seen_opts.indexOf('debug') === -1) {
             console.log(pad('      --debug', switch_pad) + 'Show debug information');
@@ -1038,9 +1040,15 @@ cli.createServer = function(/*layers*/) {
         res.writeHead(404, {"Content-Type": "text/plain"});
         res.end("Not Found\n");
     };
-    var handle = error = defaultStackErrorHandler;
+    var handle = error = defaultStackErrorHandler,
+        layers = Array.prototype.slice.call(arguments);
     
-    Array.prototype.slice.call(arguments).reverse().forEach(function (layer) {
+    //Allow createServer(a,b,c) and createServer([a,b,c])
+    if (layers.length && layers[0] instanceof Array) {
+        layers = layers[0];
+    }
+    
+    layers.reverse().forEach(function (layer) {
         var child = handle;
         handle = function (req, res) {
             try {
