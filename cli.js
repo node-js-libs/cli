@@ -175,7 +175,7 @@ cli.setArgv = function (arr, keep_arg0) {
     cli.app = arr.shift();
     
     //Strip off argv[0] if it's 'node'
-    if (!keep_arg0 && ('node' === cli.app || 'coffee' === cli.app)) {
+    if (!keep_arg0 && 'node' === cli.app) {
         cli.app = arr.shift();
     }
     
@@ -469,6 +469,18 @@ var status = function (msg, type) {
     } else {
         console.log(msg);
     }
+};
+
+/**
+ * Sets the app name.
+ * 
+ * @param {String} name
+ * @return cli (for chaining)
+ * @api public
+ */
+cli.setName = function (name) {
+    cli.app = name;
+    return cli;
 };
 
 /**
