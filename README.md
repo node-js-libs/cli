@@ -1,8 +1,11 @@
-**cli is a toolkit for rapidly building NodeJS command line apps**
+**cli is a toolkit for rapidly building NodeJS command line apps - it includes:**
 
-Install with npm `npm install cli` or just bundle [cli.js](https://github.com/chriso/cli/raw/master/cli.js) with your app.
+- Full featured opts/args parser
+- Helper methods for working with stdin/stdout
 
-### Examples
+Install using `npm install cli` or just bundle [cli.js](https://github.com/chriso/cli/raw/master/cli.js) with your app.
+
+## Examples
 
 **sort.js** - Usage: `$ ./sort.js < input.txt`
 
@@ -11,12 +14,12 @@ Install with npm `npm install cli` or just bundle [cli.js](https://github.com/ch
         this.output(lines.sort().join(newline));
     });
     
-Let's quickly add support for an `-n` switch to use a numeric sort, and a `-r` switch to reverse output
+Let's add support for an `-n` switch to use a numeric sort, and a `-r` switch to reverse output - only 5 extra lines of code (!)
     
     var cli = require('cli'), options = cli.parse();
     
     cli.withStdinLines(function(lines, newline) {
-        lines.sort(!options.n ? null : function (a, b) {
+        lines.sort(!options.n ? null : function(a, b) {
             return parseInt(a) > parseInt(b);
         });
         if (options.r) lines.reverse();
@@ -37,7 +40,7 @@ Now let's create a static file server with daemon support to see the opts parser
         serve: [false, 'Serve static files from PATH', 'path', './public']
     });
 
-    cli.main(function (args, options) {
+    cli.main(function(args, options) {
         var server, middleware = [];
         
         if (options.log) {
@@ -57,24 +60,20 @@ To output usage information
 
     $ ./static.js --help
     
-To create a daemon that serves files from /tmp, run
+To create a daemon that serves files from */tmp*, run
 
     $ ./static.js -ld --serve=/tmp
 
 Need to view the log? `$ ./static.js -d log`. Need to stop the daemon? `$ ./static.js -d stop`. 
 
-For those interested, [here is the same app written in CoffeeScript](https://github.com/chriso/cli/blob/master/examples/static.coffee).
-
-For more examples, see [./examples](https://github.com/chriso/cli/tree/master/examples).
+For more examples, see [./examples](https://github.com/chriso/cli/tree/master/examples)
 
 ## Plugins
 
-Plugins are a way of adding common options and can be enabled using `cli.enable(plugin1, [plugin2, ...]);`, and disabled using the equivalent `disable()`, e.g.
-
-    cli.enable('daemon','status');
+Plugins are a way of adding common opts and can be enabled using 
+    
+    cli.enable(plugin1, [plugin2, ...]);  //To disable, use the equivalent disable() method
    
-Available plugins are:
-
 **help** - *enabled by default*
 
 Adds `-h,--help` to output auto-generated usage information
@@ -111,12 +110,15 @@ Adds `-t,--timeout N` to exit the process after N seconds with an error
 
 Adds `-c,--catch` to catch and output uncaughtExceptions and resume execution
 
+*Note: Plugins are automatically disabled if an option or switch of the same name is already defined*
+
 ## Other helper methods
 
-cli has helper methods for working with *stdin*
+cli has helper methods for working with stdin and stdout
 
     cli.withStdin(callback);        //callback receives stdin as a string
     cli.withStdinLines(callback);   //callback receives (lines, newline) - newline is autodetected as \n or \r\n
+    cli.output(string);
     
 To spawn a child process, use
 
