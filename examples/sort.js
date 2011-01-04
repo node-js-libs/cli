@@ -1,5 +1,22 @@
 #!/usr/bin/env node
 
-require('cli').disable('usage','help').withStdinLines(function (lines, separator) {
-    this.output(lines.sort().join(separator));
+var cli = require('cli').disable('version');
+
+var options = cli.parse({
+    numeric: ['n', 'Compare using a numeric sort'],
+    reverse: ['r', 'Reverse the results']
+});
+
+cli.withStdinLines(function (lines, newline) {
+
+    lines.sort(!options.numeric ? null : function (a, b) {
+        return parseInt(a) > parseInt(b);
+    });
+    
+    if (options.reverse) {
+        lines.reverse();
+    }
+    
+    this.output(lines.join(newline));
+    
 });

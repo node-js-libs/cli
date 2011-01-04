@@ -4,7 +4,7 @@ It includes a full featured opts/args parser + plugin support to add commonly us
 
 ## Examples
 
-*sort.js*
+**sort.js**
 
     #!/usr/bin/env node
     
@@ -16,7 +16,7 @@ Try it out
 
     ./sort.js < input.txt
 
-*static.js* - a static file server with daemon support (requires `npm install creationix daemon`)
+**static.js** - a static file server with daemon support (requires `npm install creationix daemon`)
 
     #!/usr/bin/env node
 
