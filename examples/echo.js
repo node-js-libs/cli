@@ -1,6 +1,12 @@
 #!/usr/bin/env node
 
-//Enable the status plugin / disable the version plugin
+/* All of the following commands are equivalent and write `foo\tbar` to out.txt
+    $ ./echo.js -n -e --output=out.txt "foo\tbar"
+    $ ./echo.js --newline --escape --output "out.txt" "foo\tbar"
+    $ ./echo.js -ne --output=out.txt "foo\tbar"
+    $ ./echo.js -en --output="out.txt" "foo\tbar"
+*/
+
 var cli = require('../cli').enable('status').disable('version');
 
 cli.parse({
