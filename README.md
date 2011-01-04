@@ -20,15 +20,15 @@ Try it out
 
     #!/usr/bin/env node
 
-    var cli = require('cli').enable('status','daemon').setVersion('0.1.0');
+    var cli = require('cli').enable('status','daemon');
 
-    cli.parse({
+    var options = cli.parse({
         log:     ['l', 'Enable logging'],
         port:    ['p', 'Listen on this port', 'number', 8080],
         serve:   [false, 'Serve static files from PATH', 'path', './public']
     });
 
-    cli.main(function (args, options) {
+    cli.main(function () {
         var server, middleware = [];
         
         if (options.log) {
