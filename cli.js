@@ -812,12 +812,12 @@ cli.withInput = function (file, encoding, callback) {
     } else {
         try {
             file = cli.native.fs.createReadStream(file);
-            file.setEncoding(encoding);
             file.on('error', cli.fatal);
         } catch (e) {
             return cli.fatal(e);
         }
     }
+    file.setEncoding(encoding);
     var last_line = '', lines = [], eof, sep;
     file.on('data', function (data) {
         if (eof) return;
