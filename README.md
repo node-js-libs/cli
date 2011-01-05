@@ -71,17 +71,26 @@ For more examples, see [./examples](https://github.com/chriso/cli/tree/master/ex
 
 ## Helper methods
 
-cli has helper methods for working with stdin and stdout
+cli has a helper method for working with input file(s) or *stdin* (see [./examples/cat.js](https://github.com/chriso/cli/blob/master/examples/cat.js) for an example)
+
+    cli.withInput(file, function (line, newline, eof) {
+        if (!eof) {
+            this.output(line + newline);
+        }
+    });
+
+*Note: `file` can be omitted if you want to work with stdin*
+
+cli also has blocking methods that collect all input before calling callback
 
     cli.withStdin(callback);        //callback receives stdin as a string
-    cli.withStdinLines(callback);   //callback receives (lines, newline) - newline is autodetected as \n or \r\n
-    cli.output(string);
-    
+    cli.withStdinLines(callback);   //callback receives (lines, newline) - where lines is an array, and newline is autodetected as \n or \r\n
+
 To spawn a child process, use
 
     cli.exec(cmd, callback); //callback receives the output of the process (split into lines)
 
-cli also comes bundled with kof's [node-natives](https://github.com/kof/node-natives) and creationix' [stack](https://github.com/creationix/stack)
+cli comes bundled with kof's [node-natives](https://github.com/kof/node-natives) and creationix' [stack](https://github.com/creationix/stack)
 
 ## Plugins
 

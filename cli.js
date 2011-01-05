@@ -38,9 +38,6 @@ cli.argc = 0;
 cli.options = {};
 cli.args = [];
 
-cli.output = console.log;
-cli.exit = process.exit;
-
 /**
  * Bind kof's node-natives (https://github.com/kof/node-natives) to `cli.native`
  * 
@@ -58,9 +55,13 @@ var define_native = function (module) {
         }
     });
 };
-for (var module in process.binding('natives')) {
+var natives = process.binding('natives');
+for (var module in natives) {
     define_native(module);
 }
+
+cli.output = cli.native.util.print;
+cli.exit = process.exit;
 
 /**
  * Define plugins. Plugins can be enabled and disabled by calling:
@@ -774,7 +775,8 @@ cli.withStdin = function (encoding, callback) {
 
 /**
  * Gets all data from STDIN, splits the data into lines and sends it 
- * to callback.
+ * to callback (callback isn't called until all of STDIN is read. To
+ * process each line as it's received, see the method below
  * 
  * @param {Function} callback
  * @api public
@@ -783,6 +785,67 @@ cli.withStdinLines = function (callback) {
     cli.withStdin(function (data) {
         var sep = data.indexOf('\r\n') !== -1 ? '\r\n' : '\n';
         callback.apply(cli, [data.split(sep), sep]);
+    });
+};
+
+/**
+ * Asynchronously reads a file line by line. When a line is received, 
+ * callback is called with (line, sep) - when EOF is reached, callback
+ * receives (null, null, true)
+ * 
+ * @param {String} file (optional - default is 'stdin')
+ * @param {String} encoding (optional - default is 'utf8')
+ * @param {Function} callback (line, sep, eof)
+ * @api public
+ */
+cli.withInput = function (file, encoding, callback) {
+    if (typeof encoding === 'function') {
+        callback = encoding;
+        encoding = 'utf8';
+    } else if (typeof file === 'function') {
+        callback = file;
+        encoding = 'utf8';
+        file = 'stdin';
+    }
+    if (file === 'stdin') {
+        file = process.openStdin();
+    } else {
+        try {
+            file = cli.native.fs.createReadStream(file);
+            file.setEncoding(encoding);
+            file.on('error', cli.fatal);
+        } catch (e) {
+            cli.fatal(e);
+        }
+    }
+    var last_line = '', lines = [], eof, sep;
+    file.on('data', function (data) {
+        if (eof) return;
+        if (last_line.length) {
+            data = last_line + data;
+        }
+        if (!sep) {
+            if (data.indexOf('\r\n') !== -1) {
+                sep = '\r\n';
+            } else if (data.indexOf('\n') !== -1) {
+                sep = '\n';
+            } else {
+                last_line = data;
+                return;
+            }
+        }
+        lines = data.split(sep);
+        last_line = lines.pop(); //Assume the last line is incomplete
+        while (lines.length) {
+            callback.apply(cli, [lines.shift(), sep, false]);
+        }
+    });
+    file.on('end', function () {
+        eof = true;
+        if (last_line.length) {
+            callback.apply(cli, [last_line, sep || '', false]);
+        }
+        callback.apply(cli, [null, null, true]);
     });
 };
 

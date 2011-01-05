@@ -1,6 +1,6 @@
 { "name"          : "cli",
   "description"   : "A command line opts/args parser for node",
-  "version"       : "0.1.8",
+  "version"       : "0.1.9",
   "homepage"      : "http://github.com/chriso/cli",
   "keywords"      : ["cli","command line","opts","parseopt","opt","args","console","argsparse","optparse","daemon"],
   "author"        : "Chris O'Hara <cohara87@gmail.com>",
@@ -13,6 +13,9 @@
     "type": "git",
     "url": "http://github.com/chriso/cli.git"
   },
+  "contributors": [ 
+    { "name": "Douglas Meyer", "github": "https://github.com/DouglasMeyer" }
+  ],
   "engines": { "node": ">=0.2.5" },
   "licenses": [{ 
     "type": "MIT"
