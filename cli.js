@@ -815,7 +815,7 @@ cli.withInput = function (file, encoding, callback) {
             file.setEncoding(encoding);
             file.on('error', cli.fatal);
         } catch (e) {
-            cli.fatal(e);
+            return cli.fatal(e);
         }
     }
     var last_line = '', lines = [], eof, sep;
