@@ -8,12 +8,17 @@ Install using `npm install cli` or just bundle [cli.js](https://github.com/chris
 
 ## Example apps
 
-**sort.js** - Usage: `$ ./sort.js < input.txt`
+Each app starts with `#!/usr/bin/env node`
 
-    #!/usr/bin/env node
+### sort.js
+
     require('cli').withStdinLines(function(lines, newline) {
         this.output(lines.sort().join(newline));
     });
+
+Try it out
+
+    $ ./sort.js < input.txt
     
 Let's add support for an `-n` switch to use a numeric sort, and a `-r` switch to reverse output - only 5 extra lines of code (!)
     
@@ -27,11 +32,9 @@ Let's add support for an `-n` switch to use a numeric sort, and a `-r` switch to
         this.output(lines.join(newline));
     });
 
-Now let's create a static file server with daemon support to see the opts parser + plugins in use.
-
-**static.js** - requires `npm install creationix daemon`
-
-    #!/usr/bin/env node
+### static.js
+    
+Let's create a static file server with daemon support to see the opts parser + plugins in use - note: this requires `npm install creationix daemon`
 
     var cli = require('cli').enable('daemon', 'status'); //Enable 2 plugins
 
@@ -81,7 +84,7 @@ cli has a helper method for working with input file(s) or *stdin* (see [./exampl
 
 *Note: `file` can be omitted if you want to work with stdin*
 
-cli also has blocking methods that collect all input before calling callback
+cli also has methods that collect all stdin before calling callback
 
     cli.withStdin(callback);        //callback receives stdin as a string
     cli.withStdinLines(callback);   //callback receives (lines, newline)
