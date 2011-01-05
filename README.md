@@ -71,7 +71,7 @@ For more examples, see [./examples](https://github.com/chriso/cli/tree/master/ex
 
 ## Helper methods
 
-cli has a helper method for working with input file(s) or *stdin* (see [./examples/cat.js](https://github.com/chriso/cli/blob/master/examples/cat.js) for an example)
+cli has a helper method for working with input file(s) or *stdin* (see [./examples/cat.js](https://github.com/chriso/cli/blob/master/examples/cat.js) for an example). `newline` is autodetected as \n or \r\n
 
     cli.withInput(file, function (line, newline, eof) {
         if (!eof) {
@@ -84,7 +84,7 @@ cli has a helper method for working with input file(s) or *stdin* (see [./exampl
 cli also has blocking methods that collect all input before calling callback
 
     cli.withStdin(callback);        //callback receives stdin as a string
-    cli.withStdinLines(callback);   //callback receives (lines, newline) - where lines is an array, and newline is autodetected as \n or \r\n
+    cli.withStdinLines(callback);   //callback receives (lines, newline)
 
 To spawn a child process, use
 
