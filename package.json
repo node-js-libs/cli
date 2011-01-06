@@ -1,8 +1,8 @@
 { "name"          : "cli",
   "description"   : "A tool for rapidly building command line apps",
-  "version"       : "0.2.2-1",
+  "version"       : "0.2.3-1",
   "homepage"      : "http://github.com/chriso/cli",
-  "keywords"      : ["cli","command line","opts","parseopt","opt","args","console","argsparse","optparse","daemon"],
+  "keywords"      : ["cli","command line","opts","parseopt","opt","args","console","argsparse","optparse","daemon","autocomplete","command","autocompletion"],
   "author"        : "Chris O'Hara <cohara87@gmail.com>",
   "main"          : "cli.js",
   "bugs": { 
