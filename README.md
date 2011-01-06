@@ -89,11 +89,15 @@ cli also has methods that collect all stdin before calling callback
     cli.withStdin(callback);        //callback receives stdin as a string
     cli.withStdinLines(callback);   //callback receives (lines, newline)
 
+To output a progress bar, call 
+
+    cli.progress(progress); //Where 0 <= progress <= 1
+    
 To spawn a child process, use
 
     cli.exec(cmd, callback); //callback receives the output of the process (split into lines)
 
-cli comes bundled with kof's [node-natives](https://github.com/kof/node-natives) and creationix' [stack](https://github.com/creationix/stack)
+cli also comes bundled with kof's [node-natives](https://github.com/kof/node-natives) (access with cli.native) and creationix' [stack](https://github.com/creationix/stack) (access with cli.createServer)
 
 ## Plugins
 

@@ -493,6 +493,18 @@ cli.setUsage = function (u) {
     return cli;
 };
 
+var pad = function (str, len) {
+    if (typeof len === 'undefined') {
+        len = str;
+        str = '';
+    }
+    if (str.length < len) {
+        len -= str.length;
+        while (len--) str += ' ';
+    }
+    return str;
+};
+
 /**
  * Automatically build usage information from the opts list. If the help 
  * plugin is enabled (default), this info is displayed with -h, --help.
@@ -503,17 +515,6 @@ cli.getUsage = function () {
     var short, desc, optional, line, seen_opts = [],
         switch_pad = 25;
     
-    var pad = function (str, len) {
-        if (typeof len === 'undefined') {
-            len = str;
-            str = '';
-        }
-        if (str.length < len) {
-            len -= str.length;
-            while (len--) str += ' ';
-        }
-        return str;
-    };
 
     var trunc_desc = function (pref, desc, len) {
         var pref_len = pref.length,
@@ -818,12 +819,9 @@ cli.withInput = function (file, encoding, callback) {
         }
     }
     file.setEncoding(encoding);
-    var last_line = '', lines = [], eof, sep;
+    var lines = [], eof, sep;
     file.on('data', function (data) {
         if (eof) return;
-        if (last_line.length) {
-            data = last_line + data;
-        }
         if (!sep) {
             if (data.indexOf('\r\n') !== -1) {
                 sep = '\r\n';
@@ -835,15 +833,15 @@ cli.withInput = function (file, encoding, callback) {
             }
         }
         lines = data.split(sep);
-        last_line = lines.pop(); //Assume the last line is incomplete
+        data = eof ? null : lines.pop();
         while (lines.length) {
             callback.apply(cli, [lines.shift(), sep, false]);
         }
     });
     file.on('end', function () {
         eof = true;
-        if (last_line.length) {
-            callback.apply(cli, [last_line, sep || '', false]);
+        if (data.length) {
+            callback.apply(cli, [data, sep || '', false]);
         }
         callback.apply(cli, [null, null, true]);
     });
@@ -1016,4 +1014,30 @@ cli.exec = function (cmd, callback, errback) {
             callback(stdout.split('\n'));
         }
     });
-}
+};
+
+/**
+ * Helper method for outputting a progress bar to the console.
+ *
+ * @param {Number} progress (0 <= progress <= 1)
+ * @api public
+ */
+var last_progress_call, progress_len = 74;
+cli.progress = function (progress) {
+    if (progress < 0 || progress > 1) return;
+    var now = (new Date()).getTime();
+    if (last_progress_call && (now - last_progress_call) < 100) {
+        if (progress === 1) setTimeout(function () { cli.progress(1); }, 150);
+        return; //Throttle progress calls
+    }
+    last_progress_call = now;
+    var percent = function () {
+        if (progress === 1) return ' 100%\n';
+        var p = Math.floor(progress * 100) + '%';
+        if (progress < 0.1) p = ' ' + p;
+        return '  ' + p;
+    };
+    var len = Math.floor(progress_len * progress), str = '';
+    while (len--) str += '#';
+    cli.native.util.print(pad(str, progress_len) + percent() + '\r');
+};
