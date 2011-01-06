@@ -2,13 +2,15 @@
 
 - Full featured opts/args parser
 - Plugin support for adding common options and switches
-- Helper methods for working with stdin/stdout and spawning child processes
+- Helper methods for working with input/output and spawning child processes
+- Output colored/styled messages or [progress bars](https://github.com/chriso/cli/blob/master/examples/progress.js)
+- Create apps that accept a list of commands - cli includes [auto-completion](auto-completion)[https://github.com/chriso/cli/blob/master/examples/command.js] support
 
 Install using `npm install cli` or just bundle [cli.js](https://github.com/chriso/cli/raw/master/cli.js) with your app.
 
 ## Example apps
 
-Each app starts with `#!/usr/bin/env node`
+`#!/usr/bin/env node` is omitted in each case
 
 ### sort.js
 
@@ -68,13 +70,11 @@ To create a daemon that serves files from */tmp*, run
 
     $ ./static.js -ld --serve=/tmp
 
-Need to view the log? `$ ./static.js -d log`. Need to stop the daemon? `$ ./static.js -d stop`. 
-
 For more examples, see [./examples](https://github.com/chriso/cli/tree/master/examples)
 
 ## Helper methods
 
-cli has a helper method for working with input file(s) or *stdin* (see [./examples/cat.js](https://github.com/chriso/cli/blob/master/examples/cat.js) for an example). `newline` is autodetected as \n or \r\n
+cli has a helper method for working with input (see [./examples/cat.js](https://github.com/chriso/cli/blob/master/examples/cat.js) for an example). `newline` is autodetected as \n or \r\n
 
     cli.withInput(file, function (line, newline, eof) {
         if (!eof) {

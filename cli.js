@@ -226,7 +226,7 @@ cli.next = function () {
  *        long_tag: [short_tag, description, value_type, default_value];
  *
  * `commands` is an optional array or object for apps that are of the form
- *      my_app [OPTIONS] command [ARGS]
+ *      my_app [OPTIONS] <command> [ARGS]
  *  The command list is output with usage information + there is bundled
  *  support for auto-completion, etc.
  *
@@ -583,7 +583,7 @@ cli.getUsage = function () {
         return truncated;
     };
     
-    usage = usage || cli.app + ' [OPTIONS]' + (command_list ? ' command' : '') + ' [ARGS]';
+    usage = usage || cli.app + ' [OPTIONS]' + (command_list ? ' <command>' : '') + ' [ARGS]';
     console.log('\x1b[1mUsage\x1b[0m:\n  ' + usage);
     console.log('\n\x1b[1mOptions\x1b[0m: ');
     for (opt in opt_list) {
