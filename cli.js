@@ -23,11 +23,11 @@
 
  //Note: cli includes kof/node-natives and creationix/stack. I couldn't find 
  //license information for either - contact me if you want your license added
-
+ 
 var cli = exports,
     argv, curr_opt, curr_val, full_opt, is_long,
     short_tags = [], opt_list, parsed = {},
-    usage, argv_parsed,
+    usage, argv_parsed, command_list,
     daemon, daemon_arg, hide_status, show_debug;
 
 cli.app = null;
@@ -37,6 +37,7 @@ cli.argc = 0;
 
 cli.options = {};
 cli.args = [];
+cli.command;
 
 /**
  * Bind kof's node-natives (https://github.com/kof/node-natives) to `cli.native`
@@ -132,14 +133,11 @@ cli.setArgv = function (arr, keep_arg0) {
         arr = arr.split(' ');
     }
     cli.app = arr.shift();
-    
     //Strip off argv[0] if it's 'node'
     if (!keep_arg0 && 'node' === cli.app) {
         cli.app = arr.shift();
     }
-    
     cli.app = cli.native.path.basename(cli.app);
-    
     argv_parsed = false;
     cli.args = cli.argv = argv = arr;
     cli.argc = argv.length;
@@ -227,19 +225,23 @@ cli.next = function () {
  * `opts` must be an object with opts defined like:
  *        long_tag: [short_tag, description, value_type, default_value];
  *
- * The method returns:
- *      long_tag: value
+ * `commands` is an optional array or object for apps that are of the form
+ *      my_app [OPTIONS] command [ARGS]
+ *  The command list is output with usage information + there is bundled
+ *  support for auto-completion, etc.
  *
  * See README.md for more information.
  * 
  * @param {Object} opts
+ * @param {Object} commands (optional)
  * @return {Object} opts (parsed)
  * @api public
  */
-cli.parse = function (opts) {
+cli.parse = function (opts, commands) {
     var default_val, i, parsed = cli.options, seen,
         catch_all = !opts;
     opt_list = opts || {};
+    command_list = commands || [];
     while (o = cli.next()) {
         seen = false;
         for (opt in opt_list) {
@@ -349,12 +351,13 @@ cli.parse = function (opts) {
                 }, secs * 1000);
                 continue;
             }
-            if (catch_all) {
-                parsed[o] = curr_val || true;
-                continue;
-            }
             if (enable.help && (o === 'h' || o === 'help')) {
                 cli.getUsage();
+                console.log('HLELLO');
+                process.exit();
+            }
+            if (catch_all) {
+                parsed[o] = curr_val || true;
                 continue;
             }
             cli.fatal('Unknown option ' + full_opt);
@@ -370,8 +373,53 @@ cli.parse = function (opts) {
             parsed[opt] = default_val;
         }
     }
+    if (command_list) {
+        if (cli.args.length === 0) {
+            cli.fatal('A command is required' + (enable.help ? '. Please see --help for more information' : ''));
+        } else {
+            cli.command = cli.autocompleteCommand(cli.args.shift());
+        }
+    }
     cli.argc = cli.args.length;
     return parsed;
+};
+
+/**
+ * Helper method for matching a command from the command list.
+ *
+ * @param {String} command 
+ * @return {String} full_command
+ * @api public
+ */
+cli.autocompleteCommand = function (command) {
+    var list;
+    if (!(command_list instanceof Array)) {
+        list = Object.keys(command_list);
+    } else {
+        list = command_list;
+    }
+    var i, j = 0, c = command.length, tmp_list;
+    if (list.length === 0 || list.indexOf(command) !== -1) {
+        return command;
+    }
+    for (i = 0; i < c; i++) {
+        tmp_list = [];
+        l = list.length;
+        if (l <= 1) break;
+        for (j = 0; j < l; j++)
+            if (list[j].length >= i && list[j][i] === command[i]) 
+                tmp_list.push(list[j]);
+        list = tmp_list;
+    }
+    l = list.length;
+    if (l === 1) {
+        return list[0];
+    } else if (l === 0) {
+        cli.fatal('Unknown command "' + command + '"' + (enable.help ? '. Please see --help for more information' : ''));
+    } else {
+        list.sort();
+        cli.fatal('The command "' + command + '" is ambiguous and could mean "' + list.join('", "') + '"');
+    }
 };
 
 /**
@@ -454,6 +502,7 @@ cli.parsePackageJson = function (path) {
     var parse_packagejson = function (path) {
         var packagejson = JSON.parse(cli.native.fs.readFileSync(path, 'utf8'));
         cli.version = packagejson.version;
+        cli.app = packagejson.name;
     };
     var try_all = function (arr, func, err) {
         for (var i = 0, l = arr.length; i < l; i++) {
@@ -515,18 +564,14 @@ cli.getUsage = function () {
     var short, desc, optional, line, seen_opts = [],
         switch_pad = 25;
     
-
     var trunc_desc = function (pref, desc, len) {
         var pref_len = pref.length,
-            desc_len = 80 - pref_len, 
+            desc_len = 65 - pref_len, 
             truncated = '';
-        
         if (desc.length <= desc_len) {
             return desc;
         }
-        
         var desc_words = desc.split(' '), chars = 0, word;
-        
         while (desc_words.length) {
             truncated += (word = desc_words.shift()) + ' ';
             chars += word.length;
@@ -535,11 +580,10 @@ cli.getUsage = function () {
                 chars = 0;
             }
         }
-        
         return truncated;
     };
-        
-    usage = usage || cli.app + ' [OPTIONS] [ARGS]';
+    
+    usage = usage || cli.app + ' [OPTIONS]' + (command_list ? ' command' : '') + ' [ARGS]';
     console.log('\x1b[1mUsage\x1b[0m:\n  ' + usage);
     console.log('\n\x1b[1mOptions\x1b[0m: ');
     for (opt in opt_list) {
@@ -613,6 +657,17 @@ cli.getUsage = function () {
     }
     if (enable.help && seen_opts.indexOf('h') === -1 && seen_opts.indexOf('help') === -1) {
         console.log(pad('  -h, --help', switch_pad) + 'Display help and usage details');
+    }
+    if (command_list) {
+        console.log('\n\x1b[1mCommands\x1b[0m: ');
+        var list;
+        if (command_list instanceof Array) {
+            list = command_list;
+        } else {
+            list = Object.keys(command_list);
+        }
+        command_list.sort();
+        console.log('  ' + trunc_desc('  ', command_list.join(', ')));
     }
     process.exit();
 };
