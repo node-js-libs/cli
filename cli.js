@@ -274,53 +274,32 @@ cli.parse = function (opts, commands) {
                     opt_list[opt][2] = opt_list[opt][2].toLowerCase();
                 }
                 switch (opt_list[opt][2]) {
-                case 'string':
-                case 1:
-                case true:
+                case 'string': case 1: case true:
                     parsed[opt] = cli.getValue(default_val);
                     break;
-                case 'int':
-                case 'number':
-                case 'num':
-                case 'time':
-                case 'seconds':
-                case 'secs':
-                case 'minutes':
-                case 'mins':
-                case 'x':
-                case 'n':
+                case 'int': case 'number': case 'num':
+                case 'time': case 'seconds': case 'secs': case 'minutes': case 'mins':
+                case 'x': case 'n':
                     parsed[opt] = cli.getInt(default_val);
                     break;
-                case 'float':
-                case 'decimal':
+                case 'float': case 'decimal':
                     parsed[opt] = cli.getFloat(default_val);
                     break;
-                case 'path':
-                case 'file':
-                case 'directory':
-                case 'dir':
+                case 'path': case 'file': case 'directory': case 'dir':
                     parsed[opt] = cli.getPath(default_val, opt_list[opt][2]);
                     break;
                 case 'email':
                     parsed[opt] = cli.getEmail(default_val);
                     break;
-                case 'url':
-                case 'uri':
-                case 'domain':
-                case 'host':
+                case 'url': case 'uri': case 'domain': case 'host':
                     parsed[opt] = cli.getUrl(default_val, opt_list[opt][2]);
                     break;
                 case 'ip':
                     parsed[opt] = cli.getIp(default_val);
                     break;
-                case 'bool':
-                case 'boolean':
-                case 'on':
+                case 'bool': case 'boolean': case 'on':
                     parsed[opt] = true;
-                case 'false':
-                case 'off':
-                case false:
-                case 0:
+                case 'false': case 'off': case false: case 0:
                     parsed[opt] = false;
                 default:
                      cli.fatal('Unknown opt type "' + opt_list[opt][2] + '"');
