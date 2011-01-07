@@ -74,7 +74,12 @@ For more examples, see [./examples](https://github.com/chriso/cli/tree/master/ex
 
 ## Helper methods
 
-cli has a helper method for working with input (see [./examples/cat.js](https://github.com/chriso/cli/blob/master/examples/cat.js) for an example). `newline` is autodetected as \n or \r\n
+cli has methods that collect stdin (newline is autodetected as \n or \r\n)
+
+    cli.withStdin(callback);        //callback receives stdin as a string
+    cli.withStdinLines(callback);   //callback receives stdin split into an array of lines (lines, newline)
+    
+cli also has a lower level method for working with input line by line (see [./examples/cat.js](https://github.com/chriso/cli/blob/master/examples/cat.js) for an example). 
 
     cli.withInput(file, function (line, newline, eof) {
         if (!eof) {
@@ -83,11 +88,6 @@ cli has a helper method for working with input (see [./examples/cat.js](https://
     });
 
 *Note: `file` can be omitted if you want to work with stdin*
-
-cli also has methods that collect all stdin before calling callback
-
-    cli.withStdin(callback);        //callback receives stdin as a string
-    cli.withStdinLines(callback);   //callback receives (lines, newline)
 
 To output a progress bar, call 
 
