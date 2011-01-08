@@ -28,7 +28,7 @@ var cli = exports,
     argv, curr_opt, curr_val, full_opt, is_long,
     short_tags = [], opt_list, parsed = {},
     usage, argv_parsed, command_list,
-    daemon, daemon_arg, hide_status, show_debug;
+    daemon, daemon_arg, no_color, show_debug;
 
 cli.app = null;
 cli.version = null;
@@ -78,7 +78,7 @@ var enable = {
     help: true,      //Adds -h, --help
     version: false,  //Adds -v,--version => gets version by parsing a nearby package.json
     daemon: false,   //Adds -d,--daemon [ARG] => (see cli.daemon() below)
-    status: false,   //Adds -s,--silent & --debug => hide console messages or display debug messages
+    status: false,   //Adds -k,--no-color & --debug => display plain status messages /display debug messages
     timeout: false,  //Adds -t,--timeout N => timeout the process after N seconds
     catchall: false, //Adds -c,--catch => catch and output uncaughtExceptions
 }
@@ -307,20 +307,24 @@ cli.parse = function (opts, commands) {
                 break;
             }
         }
+        console.log(seen + ' ' + enable.help + ' ' + o + '\n');
         if (!seen) {
-            if (enable.version && (o === 'v' || o === 'version')) {
+            if (enable.help && (o === 'h' || o === 'help')) {
+                cli.getUsage();
+                process.exit();
+            } else if (enable.version && (o === 'v' || o === 'version')) {
                 if (typeof cli.version === 'undefined') {
                     cli.parsePackageJson();
                 }
                 console.log(cli.app + ' v' + cli.version);
                 process.exit();
-            } else  if (enable.daemon && (o === 'd' || o === 'daemon')) {
+            } else if (enable.daemon && (o === 'd' || o === 'daemon')) {
                 daemon_arg = cli.getArrayValue(['start','stop','restart','pid','log'], is_long ? null : 'start');
                 continue;
             } else if (enable.catchall && (o === 'c' || o === 'catch')) {
                 continue;
-            } else if (enable.status && (o === 's' || o === 'silent' || o === 'debug')) {
-                hide_status = (o === 's' || o === 'silent');
+            } else if (enable.status && (o === 'k' || o === 'no-color' || o === 'debug')) {
+                no_color = (o === 'k' || o === 'no-color');
                 show_debug = o === 'debug';
                 continue;
             } else if (enable.timeout && (o === 't' || o === 'timeout')) {
@@ -329,13 +333,7 @@ cli.parse = function (opts, commands) {
                     cli.fatal('Process timed out after ' + secs + 's');
                 }, secs * 1000);
                 continue;
-            }
-            if (enable.help && (o === 'h' || o === 'help')) {
-                cli.getUsage();
-                console.log('HLELLO');
-                process.exit();
-            }
-            if (catch_all) {
+            } else if (catch_all) {
                 parsed[o] = curr_val || true;
                 continue;
             }
@@ -352,7 +350,7 @@ cli.parse = function (opts, commands) {
             parsed[opt] = default_val;
         }
     }
-    if (command_list) {
+    if (command_list.length) {
         if (cli.args.length === 0) {
             cli.fatal('A command is required' + (enable.help ? '. Please see --help for more information' : ''));
         } else {
@@ -402,7 +400,7 @@ cli.autocompleteCommand = function (command) {
 };
 
 /**
- * Adds methods to output styled status messages to the console. 
+ * Adds methods to output styled status messages to stderr. 
  *
  * Added methods are cli.info(msg), cli.error(msg), cli.ok(msg), and 
  * cli.debug(msg).
@@ -414,38 +412,36 @@ cli.autocompleteCommand = function (command) {
  * 
  * @api private
  */
+cli.status = function (msg, type) {
+    var pre;
+    switch (type) {
+    case 'info': 
+        pre = no_color ? 'INFO:' : '\x1B[33mINFO\x1B[0m:'; 
+        break;
+    case 'debug':
+        pre = no_color ? 'DEBUG:' : '\x1B[36mDEBUG\x1B[0m:'; 
+        break;
+    case 'error': 
+    case 'fatal':
+        pre = no_color ? 'ERROR:' : '\x1B[31mERROR\x1B[0m:';
+        break;
+    case 'ok':
+        pre = no_color ? 'OK:' : '\x1B[32mOK\x1B[0m:'; 
+        break; 
+    }
+    msg = pre + ' ' + msg;
+    if (type === 'fatal') {
+        console.error(msg);
+        process.exit(1);
+    }
+    if (enable.status && !show_debug && type === 'debug') {
+        return;
+    }
+    console.error(msg);
+};
 ['info','error','ok','debug','fatal'].forEach(function (type) {
     cli[type] = function (msg) {
-        switch (type) {
-        case 'info': 
-            msg = '\x1B[33mINFO\x1B[0m: ' + msg; 
-            break;
-            
-        case 'debug':
-            msg = '\x1B[36mDEBUG\x1B[0m: ' + msg; 
-            break;
-            
-        case 'error': 
-        case 'fatal': 
-            msg = '\x1B[31mERROR\x1B[0m: ' + msg;
-            break;
-            
-        case 'ok': 
-            msg = '\x1B[32mOK\x1B[0m: ' + msg; 
-            break; 
-        }
-        if (type === 'fatal') {
-            console.error(msg);
-            process.exit(1);
-        }
-        if (enable.status && (hide_status || (!show_debug && type === 'debug'))) {
-            return;
-        }
-        if (type === 'error') {
-            console.error(msg);
-        } else {
-            console.log(msg);
-        }
+        cli.status(msg, type);
     };
 });
 
@@ -618,8 +614,8 @@ cli.getUsage = function () {
         console.log(pad('  -t, --timeout N', switch_pad) + 'Exit if the process takes longer than N seconds');
     }
     if (enable.status) {
-        if (seen_opts.indexOf('s') === -1 && seen_opts.indexOf('silent') === -1) {
-            console.log(pad('  -s, --silent', switch_pad) + 'Hide all console status messages');
+        if (seen_opts.indexOf('k') === -1 && seen_opts.indexOf('no-color') === -1) {
+            console.log(pad('  -k, --no-color', switch_pad) + 'Omit color from output');
         }
         if (seen_opts.indexOf('debug') === -1) {
             console.log(pad('      --debug', switch_pad) + 'Show debug information');
@@ -637,7 +633,7 @@ cli.getUsage = function () {
     if (enable.help && seen_opts.indexOf('h') === -1 && seen_opts.indexOf('help') === -1) {
         console.log(pad('  -h, --help', switch_pad) + 'Display help and usage details');
     }
-    if (command_list) {
+    if (command_list.length) {
         console.log('\n\x1b[1mCommands\x1b[0m: ');
         var list;
         if (command_list instanceof Array) {
@@ -1061,7 +1057,7 @@ cli.progress = function (progress) {
     if (progress < 0 || progress > 1) return;
     var now = (new Date()).getTime();
     if (last_progress_call && (now - last_progress_call) < 100) {
-        if (progress === 1) setTimeout(function () { cli.progress(1); }, 150);
+        if (progress === 1) setTimeout(function () { cli.progress(1); }, 50);
         return; //Throttle progress calls
     }
     last_progress_call = now;
