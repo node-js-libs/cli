@@ -127,6 +127,10 @@ Adds options to show/hide the stylized status messages that are output to the co
 
 `-k,--no-color` will omit ANSI color escapes from the output
 
+**glob**  - *requires* `npm install glob`
+    
+Enables [glob matching](http://en.wikipedia.org/wiki/Glob_(programming)) of arguments
+
 **daemon**  - *requires* `npm install daemon`
     
 Adds `-d,--daemon ARG` for daemonizing the process and controlling the resulting daemon

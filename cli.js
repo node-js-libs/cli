@@ -81,6 +81,7 @@ var enable = {
     status: false,   //Adds -k,--no-color & --debug => display plain status messages /display debug messages
     timeout: false,  //Adds -t,--timeout N => timeout the process after N seconds
     catchall: false, //Adds -c,--catch => catch and output uncaughtExceptions
+    glob: false      //Adds glob matching => use cli.glob(arg)
 }
 cli.enable = function (/*plugins*/) {
     Array.prototype.slice.call(arguments).forEach(function (plugin) {
@@ -103,6 +104,18 @@ cli.enable = function (/*plugins*/) {
         case 'help': case 'version': case 'status':
         case 'autocomplete': case 'timeout':
             //Just add switches.
+            break;
+        case 'glob':
+            try {
+                glob = require('glob');
+                if (typeof glob.glob !== 'function') {
+                    throw 'Invalid module';
+                }
+            } catch (e) {
+                cli.fatal('glob not installed. Please run `npm install glob`');
+            }
+            cli.glob = glob.glob;
+            cli.globSync = glob.globSync;
             break;
         default:
             cli.fatal('Unknown plugin "' + plugin + '"');
@@ -1056,8 +1069,7 @@ var last_progress_call, progress_len = 74;
 cli.progress = function (progress) {
     if (progress < 0 || progress > 1) return;
     var now = (new Date()).getTime();
-    if (last_progress_call && (now - last_progress_call) < 100) {
-        if (progress === 1) setTimeout(function () { cli.progress(1); }, 50);
+    if (last_progress_call && (now - last_progress_call) < 100 && progress !== 1) {
         return; //Throttle progress calls
     }
     last_progress_call = now;
