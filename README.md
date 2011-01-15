@@ -1,9 +1,9 @@
-**cli is a toolkit for rapidly building NodeJS command line apps - it includes:**
+**cli is a toolkit for rapidly building command line apps - it includes:**
 
 - Full featured opts/args parser
 - Plugin support for adding common options and switches
 - Helper methods for working with input/output and spawning child processes
-- Output colored/styled messages or [progress bars](https://github.com/chriso/cli/blob/master/examples/progress.js)
+- Output colored/styled messages, [progress bars](https://github.com/chriso/cli/blob/master/examples/progress.js) or [spinners](https://github.com/chriso/cli/blob/master/examples/spinner.js)
 - Create apps that accept a list of commands - cli includes support for command [auto-completion](https://github.com/chriso/cli/blob/master/examples/command.js)
 
 Install using `npm install cli` or just bundle [cli.js](https://github.com/chriso/cli/raw/master/cli.js) with your app.

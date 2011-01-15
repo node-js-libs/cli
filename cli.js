@@ -1083,3 +1083,23 @@ cli.progress = function (progress) {
     while (len--) str += '#';
     cli.native.util.print(pad(str, progress_len) + percent() + '\r');
 };
+
+/**
+ * Helper method for outputting a spinner to the console.
+ *
+ * @param {String|Boolean} prefix (optional)
+ * @api public
+ */
+var spinnerInterval;
+cli.spinner = function (prefix, end) {
+    if (end) {
+        cli.native.util.print('\r' + prefix);
+        return clearInterval(spinnerInterval);
+    }
+    prefix = prefix + ' ' || '';
+    var spinner = ['-','\\','|','/'], i = 0, l = spinner.length;
+    spinnerInterval = setInterval(function () {
+        cli.native.util.print('\r' + prefix + spinner[i++]);
+        if (i == l) i = 0;
+    }, 200);
+};
