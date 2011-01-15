@@ -128,7 +128,7 @@ Adds options to show/hide the stylized status messages that are output to the co
 
 **glob**  - *requires* `npm install glob`
     
-Enables [glob matching](http://en.wikipedia.org/wiki/Glob_(programming)) of arguments
+Enables glob matching of arguments
 
 **daemon**  - *requires* `npm install daemon`
     
