@@ -320,7 +320,6 @@ cli.parse = function (opts, commands) {
                 break;
             }
         }
-        console.log(seen + ' ' + enable.help + ' ' + o + '\n');
         if (!seen) {
             if (enable.help && (o === 'h' || o === 'help')) {
                 cli.getUsage();
