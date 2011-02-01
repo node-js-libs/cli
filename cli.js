@@ -861,9 +861,10 @@ cli.withInput = function (file, encoding, callback) {
         }
     }
     file.setEncoding(encoding);
-    var lines = [], eof, sep;
-    file.on('data', function (data) {
+    var lines = [], data = '', eof, sep;
+    file.on('data', function (chunk) {
         if (eof) return;
+        data += chunk;
         if (!sep) {
             if (data.indexOf('\r\n') !== -1) {
                 sep = '\r\n';
