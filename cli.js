@@ -314,8 +314,10 @@ cli.parse = function (opts, commands) {
                     break;
                 case 'bool': case 'boolean': case 'on':
                     parsed[opt] = true;
+                    break;
                 case 'false': case 'off': case false: case 0:
                     parsed[opt] = false;
+                    break;
                 default:
                      cli.fatal('Unknown opt type "' + opt_list[opt][2] + '"');
                 }
