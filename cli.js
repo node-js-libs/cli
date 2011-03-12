@@ -91,7 +91,7 @@ cli.enable = function (/*plugins*/) {
         case 'daemon':
             try {
                 daemon = require('daemon');
-                if (typeof daemon.start !== 'function') {
+                if (typeof daemon.daemonize !== 'function') {
                     throw 'Invalid module';
                 }
             } catch (e) {
@@ -922,7 +922,7 @@ cli.daemon = function (arg, callback) {
         log_file = '/tmp/' + cli.app + '.log';
     
     var start = function () {
-        daemon.run(log_file, lock_file, function (err) {
+        daemon.daemonize(log_file, lock_file, function (err) {
             if (err) return cli.error('Error starting daemon: ' + err);
             callback();
         });
@@ -934,7 +934,7 @@ cli.daemon = function (arg, callback) {
         } catch (e) {
             return cli.error('Daemon is not running');
         };
-        daemon.stop(lock_file, function (err, pid) {
+        daemon.kill(lock_file, function (err, pid) {
             if (err && err.errno === 3) {
                 return cli.error('Daemon is not running');
             } else if (err) {
