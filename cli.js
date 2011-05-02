@@ -1,6 +1,6 @@
 /**
  * Copyright (c) 2010 Chris O'Hara <cohara87@gmail.com>
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
  * "Software"), to deal in the Software without restriction, including
@@ -8,10 +8,10 @@
  * distribute, sublicense, and/or sell copies of the Software, and to
  * permit persons to whom the Software is furnished to do so, subject to
  * the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be
  * included in all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
  * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -21,9 +21,9 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
- //Note: cli includes kof/node-natives and creationix/stack. I couldn't find 
+ //Note: cli includes kof/node-natives and creationix/stack. I couldn't find
  //license information for either - contact me if you want your license added
- 
+
 var cli = exports,
     argv, curr_opt, curr_val, full_opt, is_long,
     short_tags = [], opt_list, parsed = {},
@@ -43,7 +43,7 @@ cli.width = 70;
 
 /**
  * Bind kof's node-natives (https://github.com/kof/node-natives) to `cli.native`
- * 
+ *
  * Rather than requiring node natives (e.g. var fs = require('fs')), all
  * native modules can be accessed like `cli.native.fs`
  */
@@ -71,7 +71,7 @@ cli.exit = process.exit;
  *
  *     `cli.enable(plugin1, [plugin2, ...])`
  *     `cli.disable(plugin1, [plugin2, ...])`
- * 
+ *
  * Methods are chainable - `cli.enable(plugin).disable(plugin2)`.
  *
  * The 'help' plugin is enabled by default.
@@ -170,22 +170,22 @@ cli.next = function () {
         cli.args = [];
         argv_parsed = true;
     }
-    
+
     curr_val = null;
-    
+
     //If we're currently in a group of short opts (e.g. -abc), return the next opt
     if (short_tags.length) {
         curr_opt = short_tags.shift();
         full_opt = '-' + curr_opt;
         return curr_opt;
     }
-    
+
     if (!argv.length) {
         return false;
     }
-    
+
     curr_opt = argv.shift();
-    
+
     //If an escape sequence is found (- or --), subsequent opts are ignored
     if (curr_opt === '-' || curr_opt === '--') {
         while (argv.length) {
@@ -193,7 +193,7 @@ cli.next = function () {
         }
         return false;
     }
-    
+
     //If the next element in argv isn't an opt, add it to the list of args
     if (curr_opt[0] !== '-') {
         cli.args.push(curr_opt);
@@ -203,15 +203,15 @@ cli.next = function () {
         is_long = curr_opt[1] === '-';
         curr_opt = curr_opt.substr(is_long ? 2 : 1);
     }
-    
+
     //Accept grouped short opts, e.g. -abc => -a -b -c
     if (!is_long && curr_opt.length > 1) {
         short_tags = curr_opt.split('');
         return cli.next();
     }
-    
+
     var eq, len;
-    
+
     //Check if the long opt is in the form --option=VALUE
     if (is_long && (eq = curr_opt.indexOf('=')) >= 0) {
         curr_val = curr_opt.substr(eq + 1);
@@ -227,10 +227,10 @@ cli.next = function () {
             curr_val = parseInt(curr_val, 10);
         }
     }
-    
+
     //Save the opt representation for later
     full_opt = (is_long ? '--' : '-') + curr_opt;
-    
+
     return curr_opt;
 };
 
@@ -246,7 +246,7 @@ cli.next = function () {
  *  support for auto-completion, etc.
  *
  * See README.md for more information.
- * 
+ *
  * @param {Object} opts
  * @param {Object} commands (optional)
  * @return {Object} opts (parsed)
@@ -380,7 +380,7 @@ cli.parse = function (opts, commands) {
 /**
  * Helper method for matching a command from the command list.
  *
- * @param {String} command 
+ * @param {String} command
  * @return {String} full_command
  * @api public
  */
@@ -400,7 +400,7 @@ cli.autocompleteCommand = function (command) {
         l = list.length;
         if (l <= 1) break;
         for (j = 0; j < l; j++)
-            if (list[j].length >= i && list[j][i] === command[i]) 
+            if (list[j].length >= i && list[j][i] === command[i])
                 tmp_list.push(list[j]);
         list = tmp_list;
     }
@@ -416,34 +416,34 @@ cli.autocompleteCommand = function (command) {
 };
 
 /**
- * Adds methods to output styled status messages to stderr. 
+ * Adds methods to output styled status messages to stderr.
  *
- * Added methods are cli.info(msg), cli.error(msg), cli.ok(msg), and 
+ * Added methods are cli.info(msg), cli.error(msg), cli.ok(msg), and
  * cli.debug(msg).
  *
  * To control status messages, use the 'status' plugin
- *    1) debug() messages are hidden by default. Display them with 
+ *    1) debug() messages are hidden by default. Display them with
  *       the --debug opt.
  *    2) to hide all status messages, use the -s or --silent opt.
- * 
+ *
  * @api private
  */
 cli.status = function (msg, type) {
     var pre;
     switch (type) {
-    case 'info': 
-        pre = no_color ? 'INFO:' : '\x1B[33mINFO\x1B[0m:'; 
+    case 'info':
+        pre = no_color ? 'INFO:' : '\x1B[33mINFO\x1B[0m:';
         break;
     case 'debug':
-        pre = no_color ? 'DEBUG:' : '\x1B[36mDEBUG\x1B[0m:'; 
+        pre = no_color ? 'DEBUG:' : '\x1B[36mDEBUG\x1B[0m:';
         break;
-    case 'error': 
+    case 'error':
     case 'fatal':
         pre = no_color ? 'ERROR:' : '\x1B[31mERROR\x1B[0m:';
         break;
     case 'ok':
-        pre = no_color ? 'OK:' : '\x1B[32mOK\x1B[0m:'; 
-        break; 
+        pre = no_color ? 'OK:' : '\x1B[32mOK\x1B[0m:';
+        break;
     }
     msg = pre + ' ' + msg;
     if (type === 'fatal') {
@@ -467,7 +467,7 @@ cli.status = function (msg, type) {
  * Usage:
  *     setApp('myapp', '0.1.0');
  *     setApp('./package.json'); //Pull name/version from package.json
- * 
+ *
  * @param {String} name
  * @return cli (for chaining)
  * @api public
@@ -483,9 +483,9 @@ cli.setApp = function (name, version) {
 };
 
 /**
- * Parses the version number from package.json. If no path is specified, cli 
+ * Parses the version number from package.json. If no path is specified, cli
  * will attempt to locate a package.json in ./, ../ or ../../
- * 
+ *
  * @param {String} path (optional)
  * @api public
  */
@@ -512,7 +512,7 @@ cli.parsePackageJson = function (path) {
             return parse_packagejson(path);
         }
         try_all([
-            __dirname + '/package.json', 
+            __dirname + '/package.json',
             __dirname + '/../package.json',
             __dirname + '/../../package.json'
         ], parse_packagejson);
@@ -523,7 +523,7 @@ cli.parsePackageJson = function (path) {
 
 /**
  * Sets the usage string - default is `app [OPTIONS] [ARGS]`.
- * 
+ *
  * @param {String} u
  * @return cli (for chaining)
  * @api public
@@ -546,18 +546,18 @@ var pad = function (str, len) {
 };
 
 /**
- * Automatically build usage information from the opts list. If the help 
+ * Automatically build usage information from the opts list. If the help
  * plugin is enabled (default), this info is displayed with -h, --help.
- * 
+ *
  * @api public
  */
 cli.getUsage = function () {
     var short, desc, optional, line, seen_opts = [],
         switch_pad = 25;
-    
+
     var trunc_desc = function (pref, desc, len) {
         var pref_len = pref.length,
-            desc_len = cli.width - pref_len, 
+            desc_len = cli.width - pref_len,
             truncated = '';
         if (desc.length <= desc_len) {
             return desc;
@@ -573,12 +573,12 @@ cli.getUsage = function () {
         }
         return truncated;
     };
-    
+
     usage = usage || cli.app + ' [OPTIONS]' + (command_list ? ' <command>' : '') + ' [ARGS]';
     console.log('\x1b[1mUsage\x1b[0m:\n  ' + usage);
     console.log('\n\x1b[1mOptions\x1b[0m: ');
     for (opt in opt_list) {
-        
+
         if (opt.length === 1) {
             long = opt_list[opt][0];
             short = opt;
@@ -586,12 +586,12 @@ cli.getUsage = function () {
             long = opt;
             short = opt_list[opt][0];
         }
-        
+
         //Parse opt_list
         desc = opt_list[opt][1].trim();
         type = opt_list[opt].length >= 3 ? opt_list[opt][2] : null;
         optional = opt_list[opt].length === 4 ? opt_list[opt][3] : null;
-        
+
         //Build usage line
         if (short === long) {
             if (short.length === 1) {
@@ -603,7 +603,7 @@ cli.getUsage = function () {
             line = '  -' + short + ', --' + long;
         }
         line += ' ';
-        
+
         if (type) {
             if (type instanceof Array) {
                 desc += '. VALUE must be either [' + type.join('|') + ']';
@@ -622,7 +622,7 @@ cli.getUsage = function () {
         line += trunc_desc(line, desc);
         line += optional ? ' (Default is ' + optional + ')' : '';
         console.log(line);
-        
+
         seen_opts.push(short);
         seen_opts.push(long);
     }
@@ -636,7 +636,7 @@ cli.getUsage = function () {
         if (seen_opts.indexOf('debug') === -1) {
             console.log(pad('      --debug', switch_pad) + 'Show debug information');
         }
-    } 
+    }
     if (enable.catchall && seen_opts.indexOf('c') === -1 && seen_opts.indexOf('catch') === -1) {
         console.log(pad('  -c, --catch', switch_pad) + 'Catch unanticipated errors');
     }
@@ -665,13 +665,13 @@ cli.getUsage = function () {
 
 /**
  * Generates an error message when an opt is incorrectly used.
- * 
+ *
  * @param {String} expects (e.g. 'a value')
  * @param {String} type (e.g. 'VALUE')
  * @api public
  */
 cli.getOptError = function (expects, type) {
-    var err = full_opt + ' expects ' + expects 
+    var err = full_opt + ' expects ' + expects
             + '. Use `' + cli.app + ' ' + full_opt + (is_long ? '=' : ' ') + type + '`';
     return err;
 };
@@ -680,7 +680,7 @@ cli.getOptError = function (expects, type) {
  * Gets the next opt value and validates it with an optional validation
  * function. If validation fails or no value can be obtained, this method
  * will return the default value (if specified) or exit with err_msg.
- * 
+ *
  * @param {String} default_val
  * @param {Function} validate_func
  * @param {String} err_msg
@@ -688,9 +688,9 @@ cli.getOptError = function (expects, type) {
  */
 cli.getValue = function (default_val, validate_func, err_msg) {
     err_msg = err_msg || cli.getOptError('a value', 'VALUE');
-    
+
     var value;
-    
+
     try {
         if (curr_val) {
             if (validate_func) {
@@ -698,30 +698,30 @@ cli.getValue = function (default_val, validate_func, err_msg) {
             }
             return curr_val;
         }
-    
+
         //Grouped short opts aren't allowed to have values
         if (short_tags.length) {
             throw 'Short tags';
         }
-    
-        //If there's no args left or the next arg is an opt, return the 
+
+        //If there's no args left or the next arg is an opt, return the
         //default value (if specified) - otherwise fail
         if (!argv.length || argv[0][0] === '-') {
             throw 'No value';
         }
-        
+
         value = argv.shift();
-        
+
         if (value.match(/^[0-9]+$/)) {
             value = parseInt(value, 10);
         }
-        
+
         //Run the value through a validation/transformation function if specified
         if (validate_func) {
             value = validate_func(value);
         }
     } catch (e) {
-        
+
         //The value didn't pass the validation/transformation. Unshift the value and
         //return the default value (if specified)
         if (value) {
@@ -800,7 +800,7 @@ cli.getArrayValue = function (arr, default_val) {
 
 /**
  * Gets all data from STDIN (with optional encoding) and sends it to callback.
- * 
+ *
  * @param {String} encoding (optional - default is 'utf8')
  * @param {Function} callback
  * @api public
@@ -821,10 +821,10 @@ cli.withStdin = function (encoding, callback) {
 };
 
 /**
- * Gets all data from STDIN, splits the data into lines and sends it 
+ * Gets all data from STDIN, splits the data into lines and sends it
  * to callback (callback isn't called until all of STDIN is read. To
  * process each line as it's received, see the method below
- * 
+ *
  * @param {Function} callback
  * @api public
  */
@@ -836,10 +836,10 @@ cli.withStdinLines = function (callback) {
 };
 
 /**
- * Asynchronously reads a file line by line. When a line is received, 
+ * Asynchronously reads a file line by line. When a line is received,
  * callback is called with (line, sep) - when EOF is reached, callback
  * receives (null, null, true)
- * 
+ *
  * @param {String} file (optional - default is 'stdin')
  * @param {String} encoding (optional - default is 'utf8')
  * @param {Function} callback (line, sep, eof)
@@ -912,22 +912,22 @@ cli.daemon = function (arg, callback) {
     if (typeof daemon === 'undefined') {
         cli.fatal('Daemon is not initialized');
     }
-    
+
     if (typeof arg === 'function') {
         callback = arg;
         arg = 'start';
     }
-    
+
     var lock_file = '/tmp/' + cli.app + '.pid',
         log_file = '/tmp/' + cli.app + '.log';
-    
+
     var start = function () {
         daemon.daemonize(log_file, lock_file, function (err) {
             if (err) return cli.error('Error starting daemon: ' + err);
             callback();
         });
     };
-    
+
     var stop = function () {
         try {
             cli.native.fs.readFileSync(lock_file);
@@ -943,7 +943,7 @@ cli.daemon = function (arg, callback) {
             cli.ok('Successfully stopped daemon with pid: ' + pid);
         });
     };
-    
+
     switch(arg) {
     case 'stop':
         stop();
@@ -955,7 +955,7 @@ cli.daemon = function (arg, callback) {
         break;
     case 'log':
         try {
-            console.log(cli.native.fs.readFileSync(log_file, 'utf8'));
+            cli.native.fs.createReadStream(log_file, {encoding: 'utf8').pipe(process.stdout);
         } catch (e) {
             return cli.error('No daemon log file');
         };
@@ -1015,7 +1015,7 @@ cli.createServer = function(/*layers*/) {
     };
     var handle = error = defaultStackErrorHandler,
         layers = Array.prototype.slice.call(arguments);
-    
+
     //Allow createServer(a,b,c) and createServer([a,b,c])
     if (layers.length && layers[0] instanceof Array) {
         layers = layers[0];
@@ -1038,9 +1038,9 @@ cli.createServer = function(/*layers*/) {
 
 /**
  * A wrapper for child_process.exec().
- * 
- * If the child_process exits successfully, `callback` receives an array of 
- * stdout lines. The current process exits if the child process has an error 
+ *
+ * If the child_process exits successfully, `callback` receives an array of
+ * stdout lines. The current process exits if the child process has an error
  * and `errback` isn't defined.
  *
  * @param {String} cmd

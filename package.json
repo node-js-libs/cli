@@ -13,7 +13,7 @@
     "type": "git",
     "url": "http://github.com/chriso/cli.git"
   },
-  "contributors": [ 
+  "contributors": [
     { "name": "Douglas Meyer", "github": "https://github.com/DouglasMeyer" }
   ],
   "engines": { "node": ">=0.2.5" },
