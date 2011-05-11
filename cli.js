@@ -28,7 +28,8 @@ var cli = exports,
     argv, curr_opt, curr_val, full_opt, is_long,
     short_tags = [], opt_list, parsed = {},
     usage, argv_parsed, command_list,
-    daemon, daemon_arg, no_color, show_debug;
+    daemon, daemon_arg, no_color, show_debug,
+    path = require('path');
 
 cli.app = null;
 cli.version = null;
@@ -149,7 +150,7 @@ cli.setArgv = function (arr, keep_arg0) {
     }
     cli.app = arr.shift();
     //Strip off argv[0] if it's 'node'
-    if (!keep_arg0 && 'node' === cli.app) {
+    if (!keep_arg0 && 'node' === path.basename(cli.app)) {
         cli.app = arr.shift();
     }
     cli.app = cli.native.path.basename(cli.app);
@@ -955,7 +956,7 @@ cli.daemon = function (arg, callback) {
         break;
     case 'log':
         try {
-            cli.native.fs.createReadStream(log_file, {encoding: 'utf8').pipe(process.stdout);
+            cli.native.fs.createReadStream(log_file, {encoding: 'utf8'}).pipe(process.stdout);
         } catch (e) {
             return cli.error('No daemon log file');
         };
