@@ -28,8 +28,7 @@ var cli = exports,
     argv, curr_opt, curr_val, full_opt, is_long,
     short_tags = [], opt_list, parsed = {},
     usage, argv_parsed, command_list,
-    daemon, daemon_arg, no_color, show_debug,
-    path = require('path');
+    daemon, daemon_arg, no_color, show_debug;
 
 cli.app = null;
 cli.version = null;
@@ -150,7 +149,7 @@ cli.setArgv = function (arr, keep_arg0) {
     }
     cli.app = arr.shift();
     //Strip off argv[0] if it's 'node'
-    if (!keep_arg0 && 'node' === path.basename(cli.app)) {
+    if (!keep_arg0 && 'node' === cli.native.path.basename(cli.app)) {
         cli.app = arr.shift();
     }
     cli.app = cli.native.path.basename(cli.app);
