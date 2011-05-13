@@ -143,20 +143,20 @@ cli.disable = function (/*plugins*/) {
  * @param {Boolean} keep_arg0 (optional - default is false)
  * @api public
  */
-cli.setArgv = function (argv, keep_arg0) {
-    if (typeof argv == 'string') {
-      argv = argv.split(' ');
+cli.setArgv = function (arr, keep_arg0) {
+    if (typeof arr == 'string') {
+      arr = arr.split(' ');
     } else {
-      argv = argv.slice();
+      arr = arr.slice();
     }
-    cli.app = argv.shift();
+    cli.app = arr.shift();
     //Strip off argv[0] if it's 'node'
     if (!keep_arg0 && 'node' === cli.native.path.basename(cli.app)) {
-        cli.app = argv.shift();
+        cli.app = arr.shift();
     }
     cli.app = cli.native.path.basename(cli.app);
     argv_parsed = false;
-    cli.args = cli.argv = argv;
+    cli.args = cli.argv = argv = arr;
     cli.argc = argv.length;
 };
 cli.setArgv(process.argv);
