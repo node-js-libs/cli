@@ -152,7 +152,7 @@ cli.setArgv = function (argv, keep_arg0) {
     cli.app = argv.shift();
     //Strip off argv[0] if it's 'node'
     if (!keep_arg0 && 'node' === cli.native.path.basename(cli.app)) {
-        cli.app = arr.shift();
+        cli.app = argv.shift();
     }
     cli.app = cli.native.path.basename(cli.app);
     argv_parsed = false;
