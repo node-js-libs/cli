@@ -260,7 +260,7 @@ cli.parse = function (opts, command_def) {
     opt_list = opts || {};
     commands = command_def;
     command_list = commands || [];
-    if (typeof commands === 'object') {
+    if (!Array.isArray(commands)) {
         command_list = Object.keys(commands);
     }
     while (o = cli.next()) {
@@ -573,7 +573,7 @@ cli.getUsage = function () {
         if (desc.length <= desc_len) {
             return desc;
         }
-        var desc_words = desc.split(' '), chars = 0, word;
+        var desc_words = (desc+'').split(' '), chars = 0, word;
         while (desc_words.length) {
             truncated += (word = desc_words.shift()) + ' ';
             chars += word.length;
@@ -662,7 +662,7 @@ cli.getUsage = function () {
     }
     if (command_list.length) {
         console.error('\n\x1b[1mCommands\x1b[0m: ');
-        if (typeof commands === 'object') {
+        if (!Array.isArray(commands)) {
             for (var c in commands) {
                 line = '  ' + pad(c, switch_pad - 2);
                 line += trunc_desc(line, commands[c]);
