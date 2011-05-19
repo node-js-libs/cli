@@ -27,7 +27,7 @@
 var cli = exports,
     argv, curr_opt, curr_val, full_opt, is_long,
     short_tags = [], opt_list, parsed = {},
-    usage, argv_parsed, command_list,
+    usage, argv_parsed, command_list, commands,
     daemon, daemon_arg, no_color, show_debug;
 
 cli.app = null;
@@ -254,11 +254,15 @@ cli.next = function () {
  * @return {Object} opts (parsed)
  * @api public
  */
-cli.parse = function (opts, commands) {
+cli.parse = function (opts, command_def) {
     var default_val, i, parsed = cli.options, seen,
         catch_all = !opts;
     opt_list = opts || {};
+    commands = command_def;
     command_list = commands || [];
+    if (typeof commands === 'object') {
+        command_list = Object.keys(commands);
+    }
     while (o = cli.next()) {
         seen = false;
         for (opt in opt_list) {
@@ -334,7 +338,7 @@ cli.parse = function (opts, commands) {
                 if (typeof cli.version === 'undefined') {
                     cli.parsePackageJson();
                 }
-                console.log(cli.app + ' v' + cli.version);
+                console.error(cli.app + ' v' + cli.version);
                 process.exit();
             } else if (enable.daemon && (o === 'd' || o === 'daemon')) {
                 daemon_arg = cli.getArrayValue(['start','stop','restart','pid','log'], is_long ? null : 'start');
@@ -370,7 +374,12 @@ cli.parse = function (opts, commands) {
     }
     if (command_list.length) {
         if (cli.args.length === 0) {
-            cli.fatal('A command is required' + (enable.help ? '. Please see --help for more information' : ''));
+            if (enable.help) {
+                cli.getUsage();
+            } else {
+                cli.fatal('A command is required (' + command_list.join(', ') + ').');
+            }
+            process.exit(1);
         } else {
             cli.command = cli.autocompleteCommand(cli.args.shift());
         }
@@ -577,8 +586,8 @@ cli.getUsage = function () {
     };
 
     usage = usage || cli.app + ' [OPTIONS]' + (command_list ? ' <command>' : '') + ' [ARGS]';
-    console.log('\x1b[1mUsage\x1b[0m:\n  ' + usage);
-    console.log('\n\x1b[1mOptions\x1b[0m: ');
+    console.error('\x1b[1mUsage\x1b[0m:\n  ' + usage);
+    console.error('\n\x1b[1mOptions\x1b[0m: ');
     for (opt in opt_list) {
 
         if (opt.length === 1) {
@@ -623,44 +632,46 @@ cli.getUsage = function () {
         line = pad(line, switch_pad);
         line += trunc_desc(line, desc);
         line += optional ? ' (Default is ' + optional + ')' : '';
-        console.log(line);
+        console.error(line);
 
         seen_opts.push(short);
         seen_opts.push(long);
     }
     if (enable.timeout && seen_opts.indexOf('t') === -1 && seen_opts.indexOf('timeout') === -1) {
-        console.log(pad('  -t, --timeout N', switch_pad) + 'Exit if the process takes longer than N seconds');
+        console.error(pad('  -t, --timeout N', switch_pad) + 'Exit if the process takes longer than N seconds');
     }
     if (enable.status) {
         if (seen_opts.indexOf('k') === -1 && seen_opts.indexOf('no-color') === -1) {
-            console.log(pad('  -k, --no-color', switch_pad) + 'Omit color from output');
+            console.error(pad('  -k, --no-color', switch_pad) + 'Omit color from output');
         }
         if (seen_opts.indexOf('debug') === -1) {
-            console.log(pad('      --debug', switch_pad) + 'Show debug information');
+            console.error(pad('      --debug', switch_pad) + 'Show debug information');
         }
     }
     if (enable.catchall && seen_opts.indexOf('c') === -1 && seen_opts.indexOf('catch') === -1) {
-        console.log(pad('  -c, --catch', switch_pad) + 'Catch unanticipated errors');
+        console.error(pad('  -c, --catch', switch_pad) + 'Catch unanticipated errors');
     }
     if (enable.daemon && seen_opts.indexOf('d') === -1 && seen_opts.indexOf('daemon') === -1) {
-        console.log(pad('  -d, --daemon [ARG]', switch_pad) + 'Daemonize the process. Control the daemon using [start, stop, restart, log, pid]');
+        console.error(pad('  -d, --daemon [ARG]', switch_pad) + 'Daemonize the process. Control the daemon using [start, stop, restart, log, pid]');
     }
     if (enable.version && seen_opts.indexOf('v') === -1 && seen_opts.indexOf('version') === -1) {
-        console.log(pad('  -v, --version', switch_pad) + 'Display the current version');
+        console.error(pad('  -v, --version', switch_pad) + 'Display the current version');
     }
     if (enable.help && seen_opts.indexOf('h') === -1 && seen_opts.indexOf('help') === -1) {
-        console.log(pad('  -h, --help', switch_pad) + 'Display help and usage details');
+        console.error(pad('  -h, --help', switch_pad) + 'Display help and usage details');
     }
     if (command_list.length) {
-        console.log('\n\x1b[1mCommands\x1b[0m: ');
-        var list;
-        if (command_list instanceof Array) {
-            list = command_list;
+        console.error('\n\x1b[1mCommands\x1b[0m: ');
+        if (typeof commands === 'object') {
+            for (var c in commands) {
+                line = '  ' + pad(c, switch_pad - 2);
+                line += trunc_desc(line, commands[c]);
+                console.error(line);
+            }
         } else {
-            list = Object.keys(command_list);
+            command_list.sort();
+            console.error('  ' + trunc_desc('  ', command_list.join(', ')));
         }
-        command_list.sort();
-        console.log('  ' + trunc_desc('  ', command_list.join(', ')));
     }
     process.exit();
 };
