@@ -1073,21 +1073,23 @@ cli.exec = function (cmd, callback, errback) {
  */
 var last_progress_call, progress_len = 74;
 cli.progress = function (progress) {
-    if (progress < 0 || progress > 1) return;
+    if (progress < 0 || progress > 1 || isNaN(progress)) return;
     var now = (new Date()).getTime();
     if (last_progress_call && (now - last_progress_call) < 100 && progress !== 1) {
         return; //Throttle progress calls
     }
     last_progress_call = now;
-    var percent = function () {
-        if (progress === 1) return ' 100%\n';
-        var p = Math.floor(progress * 100) + '%';
-        if (progress < 0.1) p = ' ' + p;
-        return '  ' + p;
-    };
-    var len = Math.floor(progress_len * progress), str = '';
-    while (len--) str += '#';
-    cli.native.util.print(pad(str, progress_len) + percent() + '\r');
+
+
+    var barLength = Math.floor(progress_len * progress),
+        str       = '';
+    if (barLength == 0 && progress > 0) {
+        barLength = 1;
+    }
+    for (var i = 1; i <= progress_len; i++) {
+        str += i <= barLength ? '#' : ' ';
+    }
+    cli.native.util.print('[' + str + '] ' +  Math.floor(progress * 100) + '%' + (progress === 1 ? '\n' : '\u000D'));
 };
 
 /**
@@ -1099,13 +1101,13 @@ cli.progress = function (progress) {
 var spinnerInterval;
 cli.spinner = function (prefix, end) {
     if (end) {
-        cli.native.util.print('\r' + prefix);
+        cli.native.util.print('\u000D' + prefix);
         return clearInterval(spinnerInterval);
     }
     prefix = prefix + ' ' || '';
     var spinner = ['-','\\','|','/'], i = 0, l = spinner.length;
     spinnerInterval = setInterval(function () {
-        cli.native.util.print('\r' + prefix + spinner[i++]);
+        cli.native.util.print('\u000D' + prefix + spinner[i++]);
         if (i == l) i = 0;
     }, 200);
 };
