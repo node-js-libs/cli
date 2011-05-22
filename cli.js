@@ -260,7 +260,7 @@ cli.parse = function (opts, command_def) {
     opt_list = opts || {};
     commands = command_def;
     command_list = commands || [];
-    if (!Array.isArray(commands)) {
+    if (commands && !Array.isArray(commands)) {
         command_list = Object.keys(commands);
     }
     while (o = cli.next()) {
