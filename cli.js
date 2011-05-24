@@ -40,6 +40,7 @@ cli.args = [];
 cli.command;
 
 cli.width = 70;
+cli.option_width = 25;
 
 /**
  * Bind kof's node-natives (https://github.com/kof/node-natives) to `cli.native`
@@ -564,7 +565,7 @@ var pad = function (str, len) {
  */
 cli.getUsage = function () {
     var short, desc, optional, line, seen_opts = [],
-        switch_pad = 25;
+        switch_pad = cli.option_width;
 
     var trunc_desc = function (pref, desc, len) {
         var pref_len = pref.length,
