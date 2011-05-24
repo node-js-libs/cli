@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-var cli = require('../cli');
+var cli = require('../');
 
-//You can also )optionally) boost the width of output with:
+//You can also (optionally) boost the width of output with:
 //cli.width = 120;
 
 var long_desc = 'Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry\'s '
