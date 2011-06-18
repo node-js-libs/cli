@@ -13,72 +13,72 @@ Install using `npm install cli` or just bundle [cli.js](https://github.com/chris
 ### sort.js
 
 ```javascript
-    #!/usr/bin/env node
-    require('cli').withStdinLines(function(lines, newline) {
-        this.output(lines.sort().join(newline));
-    });
+#!/usr/bin/env node
+require('cli').withStdinLines(function(lines, newline) {
+    this.output(lines.sort().join(newline));
+});
 ```
 
 Try it out
 
 ```bash
-    $ ./sort.js < input.txt
+$ ./sort.js < input.txt
 ```
-    
+
 Let's add support for an `-n` switch to use a numeric sort, and a `-r` switch to reverse output - only 5 extra lines of code (!)
 
-```javascript    
-    var cli = require('cli'), options = cli.parse();
-    
-    cli.withStdinLines(function(lines, newline) {
-        lines.sort(!options.n ? null : function(a, b) {
-            return parseInt(a) > parseInt(b);
-        });
-        if (options.r) lines.reverse();
-        this.output(lines.join(newline));
+```javascript
+var cli = require('cli'), options = cli.parse();
+
+cli.withStdinLines(function(lines, newline) {
+    lines.sort(!options.n ? null : function(a, b) {
+        return parseInt(a) > parseInt(b);
     });
+    if (options.r) lines.reverse();
+    this.output(lines.join(newline));
+});
 ```
 
 ### static.js
-    
+
 Let's create a static file server with daemon support to see the opts parser + plugins in use - note: this requires `npm install creationix daemon`
 
 ```javascript
-    var cli = require('cli').enable('daemon', 'status'); //Enable 2 plugins
+var cli = require('cli').enable('daemon', 'status'); //Enable 2 plugins
 
-    cli.parse({
-        log:   ['l', 'Enable logging'],
-        port:  ['p', 'Listen on this port', 'number', 8080],
-        serve: [false, 'Serve static files from PATH', 'path', './public']
-    });
+cli.parse({
+    log:   ['l', 'Enable logging'],
+    port:  ['p', 'Listen on this port', 'number', 8080],
+    serve: [false, 'Serve static files from PATH', 'path', './public']
+});
 
-    cli.main(function(args, options) {
-        var server, middleware = [];
-        
-        if (options.log) {
-            this.debug('Enabling logging');
-            middleware.push(require('creationix/log')());
-        }
+cli.main(function(args, options) {
+    var server, middleware = [];
 
-        this.debug('Serving files from ' + options.serve);
-        middleware.push(require('creationix/static')('/', options.serve, 'index.html'));
-        
-        server = this.createServer(middleware).listen(options.port);
-        
-        this.ok('Listening on port ' + options.port);
-    });
+    if (options.log) {
+        this.debug('Enabling logging');
+        middleware.push(require('creationix/log')());
+    }
+
+    this.debug('Serving files from ' + options.serve);
+    middleware.push(require('creationix/static')('/', options.serve, 'index.html'));
+
+    server = this.createServer(middleware).listen(options.port);
+
+    this.ok('Listening on port ' + options.port);
+});
 ```
-    
+
 To output usage information
 
 ```bash
-    $ ./static.js --help
+$ ./static.js --help
 ```
-    
+
 To create a daemon that serves files from */tmp*, run
 
 ```bash
-    $ ./static.js -ld --serve=/tmp
+$ ./static.js -ld --serve=/tmp
 ```
 
 For more examples, see [./examples](https://github.com/chriso/cli/tree/master/examples)
@@ -88,32 +88,32 @@ For more examples, see [./examples](https://github.com/chriso/cli/tree/master/ex
 cli has methods that collect stdin (newline is autodetected as \n or \r\n)
 
 ```javascript
-    cli.withStdin(callback);        //callback receives stdin as a string
-    cli.withStdinLines(callback);   //callback receives stdin split into an array of lines (lines, newline)
+cli.withStdin(callback);        //callback receives stdin as a string
+cli.withStdinLines(callback);   //callback receives stdin split into an array of lines (lines, newline)
 ```
-    
+
 cli also has a lower level method for working with input line by line (see [./examples/cat.js](https://github.com/chriso/cli/blob/master/examples/cat.js) for an example). 
 
 ```javascript
-    cli.withInput(file, function (line, newline, eof) {
-        if (!eof) {
-            this.output(line + newline);
-        }
-    });
+cli.withInput(file, function (line, newline, eof) {
+    if (!eof) {
+        this.output(line + newline);
+    }
+});
 ```
 
 *Note: `file` can be omitted if you want to work with stdin*
 
-To output a progress bar, call 
+To output a progress bar, call
 
 ```javascript
-    cli.progress(progress); //Where 0 <= progress <= 1
+cli.progress(progress); //Where 0 <= progress <= 1
 ```
-    
+
 To spawn a child process, use
 
 ```javascript
-    cli.exec(cmd, callback); //callback receives the output of the process (split into lines)
+cli.exec(cmd, callback); //callback receives the output of the process (split into lines)
 ```
 
 cli also comes bundled with kof's [node-natives](https://github.com/kof/node-natives) (access with cli.native) and creationix' [stack](https://github.com/creationix/stack) (access with cli.createServer)
@@ -121,11 +121,11 @@ cli also comes bundled with kof's [node-natives](https://github.com/kof/node-nat
 ## Plugins
 
 Plugins are a way of adding common opts and can be enabled using 
-    
+
 ```javascript
-	cli.enable(plugin1, [plugin2, ...]);  //To disable, use the equivalent disable() method
+cli.enable(plugin1, [plugin2, ...]);  //To disable, use the equivalent disable() method
 ```
-   
+
 **help** - *enabled by default*
 
 Adds `-h,--help` to output auto-generated usage information
@@ -141,21 +141,21 @@ To set your own app name and version, use `cli.setApp(app_name, version)`
 Adds options to show/hide the stylized status messages that are output to the console when using one of these methods
 
 ```javascript
-    cli.debug(msg);  //Only shown when using --debug
-    cli.error(msg);  
-    cli.fatal(msg);  //Exits the process after outputting msg
-    cli.info(msg);
-    cli.ok(msg);
+cli.debug(msg);  //Only shown when using --debug
+cli.error(msg);
+cli.fatal(msg);  //Exits the process after outputting msg
+cli.info(msg);
+cli.ok(msg);
 ```
 
 `-k,--no-color` will omit ANSI color escapes from the output
 
 **glob**  - *requires* `npm install glob`
-    
+
 Enables glob matching of arguments
 
 **daemon**  - *requires* `npm install daemon`
-    
+
 Adds `-d,--daemon ARG` for daemonizing the process and controlling the resulting daemon
 
 `ARG` can be either start (default), stop, restart, pid (outputs the daemon's pid if it's running), or log (output the daemon's stdout+stderr)
