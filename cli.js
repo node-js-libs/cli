@@ -633,7 +633,7 @@ cli.getUsage = function () {
         line = pad(line, switch_pad);
         line += trunc_desc(line, desc);
         line += optional ? ' (Default is ' + optional + ')' : '';
-        console.error(line);
+        console.error(line.replace('%s', '%\0s'));
 
         seen_opts.push(short);
         seen_opts.push(long);
@@ -741,7 +741,7 @@ cli.getValue = function (default_val, validate_func, err_msg) {
         if (value) {
             argv.unshift(value);
         }
-        return default_val || cli.fatal(err_msg);
+        return default_val != null ? default_val : cli.fatal(err_msg);
     }
     return value;
 };
