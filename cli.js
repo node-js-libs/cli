@@ -586,7 +586,7 @@ cli.getUsage = function () {
         return truncated;
     };
 
-    usage = usage || cli.app + ' [OPTIONS]' + (command_list ? ' <command>' : '') + ' [ARGS]';
+    usage = usage || cli.app + ' [OPTIONS]' + (command_list.length ? ' <command>' : '') + ' [ARGS]';
     console.error('\x1b[1mUsage\x1b[0m:\n  ' + usage);
     console.error('\n\x1b[1mOptions\x1b[0m: ');
     for (opt in opt_list) {
