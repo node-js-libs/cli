@@ -270,7 +270,7 @@ cli.parse = function (opts, command_def) {
             if (!(opt_list[opt] instanceof Array)) {
                 continue;
             }
-            if (opt_list[opt][0] === false) {
+            if (!opt_list[opt][0]) {
                 opt_list[opt][0] = opt;
             }
             if (o === opt || o === opt_list[opt][0]) {
