@@ -7,7 +7,7 @@
   "main"          : "cli.js",
   "bugs": {
     "mail": "cohara87@gmail.com",
-    "web": "http://github.com/chriso/cli/issues"
+    "url": "http://github.com/chriso/cli/issues"
   },
   "repository": {
     "type": "git",
