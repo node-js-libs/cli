@@ -331,6 +331,9 @@ cli.parse = function (opts, command_def) {
                 break;
             }
         }
+        if (process.env.NODE_DISABLE_COLORS) {
+            no_color = true;
+        }
         if (!seen) {
             if (enable.help && (o === 'h' || o === 'help')) {
                 cli.getUsage();
@@ -587,8 +590,13 @@ cli.getUsage = function () {
     };
 
     usage = usage || cli.app + ' [OPTIONS]' + (command_list.length ? ' <command>' : '') + ' [ARGS]';
-    console.error('\x1b[1mUsage\x1b[0m:\n  ' + usage);
-    console.error('\n\x1b[1mOptions\x1b[0m: ');
+    if (no_color) {
+        console.error('Usage:\n  ' + usage);
+        console.error('Options: ');
+    } else {
+        console.error('\x1b[1mUsage\x1b[0m:\n  ' + usage);
+        console.error('\n\x1b[1mOptions\x1b[0m: ');
+    }
     for (opt in opt_list) {
 
         if (opt.length === 1) {
@@ -768,7 +776,7 @@ cli.getFloat = function (default_val) {
 cli.getUrl = function (default_val, identifier) {
     identifier = identifier || 'url';
     return cli.getValue(default_val, function (value) {
-        if (!value.match(/^(?:(?:ht|f)tp(?:s?)\:\/\/|~\/|\/)?(?:\w+:\w+@)?((?:(?:[-\w\d{1-3}]+\.)+(?:com|org|net|gov|mil|biz|info|mobi|name|aero|jobs|edu|co\.uk|ac\.uk|it|fr|tv|museum|asia|local|travel|[a-z]{2})?)|((\b25[0-5]\b|\b[2][0-4][0-9]\b|\b[0-1]?[0-9]?[0-9]\b)(\.(\b25[0-5]\b|\b[2][0-4][0-9]\b|\b[0-1]?[0-9]?[0-9]\b)){3}))(?::[\d]{1,5})?(?:(?:(?:\/(?:[-\w~!$+|.,=]|%[a-f\d]{2})+)+|\/)+|\?|#)?(?:(?:\?(?:[-\w~!$+|.,*:]|%[a-f\d{2}])+=?(?:[-\w~!$+|.,*:=]|%[a-f\d]{2})*)(?:&(?:[-\w~!$+|.,*:]|%[a-f\d{2}])+=?(?:[-\w~!$+|.,*:=]|%[a-f\d]{2})*)*)*(?:#(?:[-\w~!$ |\/.,*:;=]|%[a-f\d]{2})*)?$/)) {
+        if (!value.match(/^(?:(?:ht|f)tp(?:s?)\:\/\/|~\/|\/)?(?:\w+:\w+@)?((?:(?:[-\w\d{1-3}]+\.)+(?:com|org|net|gov|mil|biz|info|mobi|name|aero|jobs|edu|co\.uk|ac\.uk|it|fr|tv|museum|asia|local|travel|[a-z]{2})?)|((\b25[0-5]\b|\b[2][0-4][0-9]\b|\b[0-1]?[0-9]?[0-9]\b)(\.(\b25[0-5]\b|\b[2][0-4][0-9]\b|\b[0-1]?[0-9]?[0-9]\b)){3}))(?::[\d]{1,5})?(?:(?:(?:\/(?:[-\w~!$+|.,=]|%[a-f\d]{2})+)+|\/)+|\?|#)?(?:(?:\?(?:[-\w~!$+|.,*:]|%[a-f\d{2}])+=?(?:[-\w~!$+|.,*:=]|%[a-f\d]{2})*)(?:&(?:[-\w~!$+|.,*:]|%[a-f\d{2}])+=?(?:[-\w~!$+|.,*:=]|%[a-f\d]{2})*)*)*(?:#(?:[-\w~!$ |\/.,*:;=]|%[a-f\d]{2})*)?$/i)) {
             throw 'Invalid URL';
         }
         return value;
