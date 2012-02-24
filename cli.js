@@ -109,16 +109,7 @@ cli.enable = function (/*plugins*/) {
             //Just add switches.
             break;
         case 'glob':
-            try {
-                glob = require('glob');
-                if (typeof glob.glob !== 'function') {
-                    throw 'Invalid module';
-                }
-            } catch (e) {
-                cli.fatal('glob not installed. Please run `npm install glob`');
-            }
-            cli.glob = glob.glob;
-            cli.globSync = glob.globSync;
+            cli.glob = require('glob');
             break;
         default:
             cli.fatal('Unknown plugin "' + plugin + '"');
