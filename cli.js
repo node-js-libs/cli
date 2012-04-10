@@ -142,8 +142,9 @@ cli.setArgv = function (arr, keep_arg0) {
       arr = arr.slice();
     }
     cli.app = arr.shift();
-    //Strip off argv[0] if it's 'node'
-    if (!keep_arg0 && 'node' === cli.native.path.basename(cli.app)) {
+    //Strip off argv[0] if it's a node binary
+    if (!keep_arg0 && ('node' === cli.native.path.basename(cli.app)
+            || process.execPath === cli.app)) {
         cli.app = arr.shift();
     }
     cli.app = cli.native.path.basename(cli.app);
