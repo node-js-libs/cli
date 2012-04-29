@@ -331,7 +331,7 @@ cli.parse = function (opts, command_def) {
                 cli.getUsage();
                 process.exit();
             } else if (enable.version && (o === 'v' || o === 'version')) {
-                if (typeof cli.version === 'undefined') {
+                if (cli.version == null) {
                     cli.parsePackageJson();
                 }
                 console.error(cli.app + ' v' + cli.version);
