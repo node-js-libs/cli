@@ -151,6 +151,9 @@ cli.setArgv = function (arr, keep_arg0) {
     argv_parsed = false;
     cli.args = cli.argv = argv = arr;
     cli.argc = argv.length;
+    cli.options = {};
+    cli.args = [];
+    cli.command = null;
 };
 cli.setArgv(process.argv);
 
