@@ -1,3 +1,4 @@
+[![build status](https://secure.travis-ci.org/chriso/cli.png)](http://travis-ci.org/chriso/cli)
 **cli is a toolkit for rapidly building command line apps - it includes:**
 
 - Full featured opts/args parser
