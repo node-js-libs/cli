@@ -1067,7 +1067,7 @@ cli.exec = function (cmd, callback, errback) {
         err = err || stderr;
         if (err) {
             if (errback) {
-                return errback(err);
+                return errback(err, stdout);
             }
             return cli.fatal('exec() failed\n' + err);
         }
