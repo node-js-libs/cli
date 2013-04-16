@@ -722,7 +722,7 @@ cli.getValue = function (default_val, validate_func, err_msg) {
 
         //If there's no args left or the next arg is an opt, return the
         //default value (if specified) - otherwise fail
-        if (!argv.length || argv[0][0] === '-') {
+        if (!argv.length || (argv[0].length === 1 && argv[0][0] === '-')) {
             throw 'No value';
         }
 
