@@ -142,8 +142,12 @@ cli.setArgv = function (arr, keep_arg0) {
       arr = arr.slice();
     }
     cli.app = arr.shift();
-    //Strip off argv[0] if it's a node binary
+    // Strip off argv[0] if it's a node binary
+    // So this is still broken and will break if you are calling node through a
+    // symlink, unless you are lucky enough to have it as 'node' literal. Latter
+    // is a hack, but resolving abspaths/symlinks is an unportable can of worms.
     if (!keep_arg0 && ('node' === cli.native.path.basename(cli.app)
+            || cli.native.path.basename(process.execPath) === cli.app
             || process.execPath === cli.app)) {
         cli.app = arr.shift();
     }
