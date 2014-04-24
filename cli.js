@@ -335,7 +335,6 @@ cli.parse = function (opts, command_def) {
         if (!seen) {
             if (enable.help && (o === 'h' || o === 'help')) {
                 cli.getUsage();
-                process.exit();
             } else if (enable.version && (o === 'v' || o === 'version')) {
                 if (cli.version == null) {
                     cli.parsePackageJson();
@@ -564,7 +563,7 @@ var pad = function (str, len) {
  *
  * @api public
  */
-cli.getUsage = function () {
+cli.getUsage = function (code) {
     var short, desc, optional, line, seen_opts = [],
         switch_pad = cli.option_width;
 
@@ -680,7 +679,7 @@ cli.getUsage = function () {
             console.error('  ' + trunc_desc('  ', command_list.join(', ')));
         }
     }
-    process.exit();
+    process.exit(code);
 };
 
 /**
