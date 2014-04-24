@@ -802,7 +802,7 @@ cli.getIp = function (default_val) {
 cli.getPath = function (default_val, identifier) {
     identifier = identifier || 'path';
     return cli.getValue(default_val, function (value) {
-        if (value.match(/[?*:;{}]/)) {
+        if (value.match(/[?*;{}]/)) {
             throw 'Invalid path';
         }
         return value;
