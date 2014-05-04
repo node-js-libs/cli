@@ -14,7 +14,8 @@
     "url": "http://github.com/chriso/cli.git"
   },
   "dependencies": {
-    "glob": ">= 3.1.4"
+    "glob": ">= 3.1.4",
+    "exit": "0.1.2"
   },
   "contributors": [
     { "name": "Douglas Meyer", "github": "https://github.com/DouglasMeyer" }

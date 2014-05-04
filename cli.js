@@ -65,7 +65,7 @@ for (var module in natives) {
 }
 
 cli.output = cli.native.util.print;
-cli.exit = process.exit;
+cli.exit = require('exit');
 
 /**
  * Define plugins. Plugins can be enabled and disabled by calling:
@@ -340,7 +340,7 @@ cli.parse = function (opts, command_def) {
                     cli.parsePackageJson();
                 }
                 console.error(cli.app + ' v' + cli.version);
-                process.exit();
+                return cli.exit();
             } else if (enable.daemon && (o === 'd' || o === 'daemon')) {
                 daemon_arg = cli.getArrayValue(['start','stop','restart','pid','log'], is_long ? null : 'start');
                 continue;
@@ -380,7 +380,7 @@ cli.parse = function (opts, command_def) {
             } else {
                 cli.fatal('A command is required (' + command_list.join(', ') + ').');
             }
-            process.exit(1);
+            return cli.exit(1);
         } else {
             cli.command = cli.autocompleteCommand(cli.args.shift());
         }
@@ -460,7 +460,7 @@ cli.status = function (msg, type) {
     msg = pre + ' ' + msg;
     if (type === 'fatal') {
         console.error(msg);
-        process.exit(1);
+        return cli.exit(1);
     }
     if (enable.status && !show_debug && type === 'debug') {
         return;
@@ -679,7 +679,7 @@ cli.getUsage = function (code) {
             console.error('  ' + trunc_desc('  ', command_list.join(', ')));
         }
     }
-    process.exit(code);
+    return cli.exit(code);
 };
 
 /**
