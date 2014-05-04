@@ -616,8 +616,10 @@ cli.getUsage = function (code) {
             } else {
                 line = '      --' + long;
             }
-        } else {
+        } else if (short) {
             line = '  -' + short + ', --' + long;
+        } else {
+            line = '      --' + long;
         }
         line += ' ';
 
