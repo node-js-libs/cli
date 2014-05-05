@@ -340,7 +340,8 @@ cli.parse = function (opts, command_def) {
                     cli.parsePackageJson();
                 }
                 console.error(cli.app + ' v' + cli.version);
-                return cli.exit();
+                cli.exit();
+                break;
             } else if (enable.daemon && (o === 'd' || o === 'daemon')) {
                 daemon_arg = cli.getArrayValue(['start','stop','restart','pid','log'], is_long ? null : 'start');
                 continue;
