@@ -14,7 +14,7 @@
     "url": "http://github.com/chriso/cli.git"
   },
   "dependencies": {
-    "glob": ">= 3.1.4",
+    "glob": "~ 3.2.1",
     "exit": "0.1.2"
   },
   "contributors": [
