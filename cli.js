@@ -734,10 +734,6 @@ cli.getValue = function (default_val, validate_func, err_msg) {
 
         value = argv.shift();
 
-        if (value.match(/^[0-9]+$/)) {
-            value = parseInt(value, 10);
-        }
-
         //Run the value through a validation/transformation function if specified
         if (validate_func) {
             value = validate_func(value);
