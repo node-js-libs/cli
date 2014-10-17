@@ -67,6 +67,11 @@ for (var module in natives) {
 cli.output = cli.native.util.print;
 cli.exit = require('exit');
 
+var no_color = false;
+if (process.env.NODE_DISABLE_COLORS || process.env.TERM === 'dumb') {
+  no_color = true;
+}
+
 /**
  * Define plugins. Plugins can be enabled and disabled by calling:
  *
@@ -328,9 +333,6 @@ cli.parse = function (opts, command_def) {
                 }
                 break;
             }
-        }
-        if (process.env.NODE_DISABLE_COLORS) {
-            no_color = true;
         }
         if (!seen) {
             if (enable.help && (o === 'h' || o === 'help')) {
