@@ -347,8 +347,10 @@ cli.parse = function (opts, command_def) {
                 continue;
             } else if (enable.catchall && (o === 'c' || o === 'catch')) {
                 continue;
-            } else if (enable.status && (o === 'k' || o === 'no-color' || o === 'debug')) {
+            } else if (enable.status && (o === 'k' || o === 'no-color')) {
                 no_color = (o === 'k' || o === 'no-color');
+                continue;
+            } else if (enable.status && (o === 'debug')) {
                 show_debug = o === 'debug';
                 continue;
             } else if (enable.timeout && (o === 't' || o === 'timeout')) {
