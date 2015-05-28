@@ -1,6 +1,6 @@
 { "name"          : "cli",
   "description"   : "A tool for rapidly building command line apps",
-  "version"       : "0.6.6",
+  "version"       : "0.7.0",
   "homepage"      : "http://github.com/chriso/cli",
   "keywords"      : ["cli","command line","opts","parseopt","opt","args","console","argsparse","optparse","daemon","autocomplete","command","autocompletion"],
   "author"        : "Chris O'Hara <cohara87@gmail.com>",
