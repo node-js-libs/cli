@@ -1135,6 +1135,10 @@ cli.progress = function (progress, decimals, stream) {
 var spinnerInterval;
 cli.spinner = function (prefix, end, stream) {
     stream = stream || process.stdout;
+    if(!stream.clearLine) {
+        stream.write(prefix + '\n');
+        return;
+    }
     if (end) {
         stream.clearLine();
         stream.cursorTo(0);
