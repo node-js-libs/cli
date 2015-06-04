@@ -1119,6 +1119,7 @@ cli.progress = function (progress, decimals, stream) {
         }
         else {
             stream.write(percentage + '\n');
+            last_progress_percentage = 0;
         }
         return;
     }
