@@ -1092,7 +1092,7 @@ cli.exec = function (cmd, callback, errback) {
  * @param {Number} progress (0 <= progress <= 1)
  * @api public
  */
-var last_progress_call, progress_len = 74;
+var last_progress_call, progress_len = 74, min_progress_increase = 5, last_progress_percentage = 0;
 cli.progress = function (progress, decimals, stream) {
     stream = stream || process.stdout;
     if (progress < 0 || progress > 1 || isNaN(progress)) return;
@@ -1103,19 +1103,32 @@ cli.progress = function (progress, decimals, stream) {
     }
     last_progress_call = now;
 
-
+    var pwr = Math.pow(10, decimals);
+    var percentageAsNum = Math.floor(progress * 100 * pwr) / pwr; 
+    if (!stream.isTTY && percentageAsNum < 100 && percentageAsNum - last_progress_percentage < min_progress_increase) {
+        return; //don't over-print if not TTY
+    }
+    last_progress_percentage = percentageAsNum;
+    var percentage = percentageAsNum + '%';
+    for (var i = 0; i < decimals; i++) {
+        percentage += ' ';
+    }
+    if (!stream.isTTY) {
+        if (percentageAsNum < 100) {
+            stream.write(percentage + '...');
+        }
+        else {
+            stream.write(percentage + '\n');
+        }
+        return;
+    }
     var barLength = Math.floor(progress_len * progress),
         str       = '';
     if (barLength == 0 && progress > 0) {
         barLength = 1;
     }
-    for (var i = 1; i <= progress_len; i++) {
+    for (i = 1; i <= progress_len; i++) {
         str += i <= barLength ? '#' : ' ';
-    }
-    var pwr = Math.pow(10, decimals);
-    var percentage = Math.floor(progress * 100 * pwr) / pwr + '%';
-    for (i = 0; i < decimals; i++) {
-        percentage += ' ';
     }
     stream.clearLine();
     stream.write('[' + str + '] ' +  percentage);
@@ -1135,7 +1148,7 @@ cli.progress = function (progress, decimals, stream) {
 var spinnerInterval;
 cli.spinner = function (prefix, end, stream) {
     stream = stream || process.stdout;
-    if(!stream.clearLine) {
+    if(!stream.isTTY) {
         stream.write(prefix + '\n');
         return;
     }
