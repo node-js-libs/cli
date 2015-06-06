@@ -1092,7 +1092,7 @@ cli.exec = function (cmd, callback, errback) {
  * @param {Number} progress (0 <= progress <= 1)
  * @api public
  */
-var last_progress_call, progress_len = 74;
+var last_progress_call, progress_len = 74, min_progress_increase = 5, last_progress_percentage = 0;
 cli.progress = function (progress, decimals, stream) {
     stream = stream || process.stdout;
     if (progress < 0 || progress > 1 || isNaN(progress)) return;
@@ -1103,19 +1103,33 @@ cli.progress = function (progress, decimals, stream) {
     }
     last_progress_call = now;
 
-
-    var barLength = Math.floor(progress_len * progress),
-        str       = '';
-    if (barLength == 0 && progress > 0) {
-        barLength = 1;
-    }
-    for (var i = 1; i <= progress_len; i++) {
-        str += i <= barLength ? '#' : ' ';
-    }
     var pwr = Math.pow(10, decimals);
-    var percentage = Math.floor(progress * 100 * pwr) / pwr + '%';
-    for (i = 0; i < decimals; i++) {
+    var percentage_as_num = Math.floor(progress * 100 * pwr) / pwr; 
+    if (!stream.isTTY && percentage_as_num < 100 && percentage_as_num - last_progress_percentage < min_progress_increase) {
+        return; //don't over-print if not TTY
+    }
+    last_progress_percentage = percentage_as_num;
+    var percentage = percentage_as_num + '%';
+    for (var i = 0; i < decimals; i++) {
         percentage += ' ';
+    }
+    if (!stream.isTTY) {
+        if (percentage_as_num < 100) {
+            stream.write(percentage + '...');
+        }
+        else {
+            stream.write(percentage + '\n');
+            last_progress_percentage = 0;
+        }
+        return;
+    }
+    var bar_length = Math.floor(progress_len * progress),
+        str       = '';
+    if (bar_length == 0 && progress > 0) {
+        bar_length = 1;
+    }
+    for (i = 1; i <= progress_len; i++) {
+        str += i <= bar_length ? '#' : ' ';
     }
     stream.clearLine();
     stream.write('[' + str + '] ' +  percentage);
@@ -1132,10 +1146,10 @@ cli.progress = function (progress, decimals, stream) {
  * @param {String|Boolean} prefix (optional)
  * @api public
  */
-var spinnerInterval;
+var spinner_interval;
 cli.spinner = function (prefix, end, stream) {
     stream = stream || process.stdout;
-    if(!stream.clearLine) {
+    if(!stream.isTTY) {
         stream.write(prefix + '\n');
         return;
     }
@@ -1143,11 +1157,11 @@ cli.spinner = function (prefix, end, stream) {
         stream.clearLine();
         stream.cursorTo(0);
         stream.write(prefix + '\n');
-        return clearInterval(spinnerInterval);
+        return clearInterval(spinner_interval);
     }
     prefix = prefix + ' ' || '';
     var spinner = ['-','\\','|','/'], i = 0, l = spinner.length;
-    spinnerInterval = setInterval(function () {
+    spinner_interval = setInterval(function () {
         stream.clearLine();
         stream.cursorTo(0);
         stream.write(prefix + spinner[i++]);
