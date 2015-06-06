@@ -1104,17 +1104,17 @@ cli.progress = function (progress, decimals, stream) {
     last_progress_call = now;
 
     var pwr = Math.pow(10, decimals);
-    var percentageAsNum = Math.floor(progress * 100 * pwr) / pwr; 
-    if (!stream.isTTY && percentageAsNum < 100 && percentageAsNum - last_progress_percentage < min_progress_increase) {
+    var percentage_as_num = Math.floor(progress * 100 * pwr) / pwr; 
+    if (!stream.isTTY && percentage_as_num < 100 && percentage_as_num - last_progress_percentage < min_progress_increase) {
         return; //don't over-print if not TTY
     }
-    last_progress_percentage = percentageAsNum;
-    var percentage = percentageAsNum + '%';
+    last_progress_percentage = percentage_as_num;
+    var percentage = percentage_as_num + '%';
     for (var i = 0; i < decimals; i++) {
         percentage += ' ';
     }
     if (!stream.isTTY) {
-        if (percentageAsNum < 100) {
+        if (percentage_as_num < 100) {
             stream.write(percentage + '...');
         }
         else {
@@ -1123,13 +1123,13 @@ cli.progress = function (progress, decimals, stream) {
         }
         return;
     }
-    var barLength = Math.floor(progress_len * progress),
+    var bar_length = Math.floor(progress_len * progress),
         str       = '';
-    if (barLength == 0 && progress > 0) {
-        barLength = 1;
+    if (bar_length == 0 && progress > 0) {
+        bar_length = 1;
     }
     for (i = 1; i <= progress_len; i++) {
-        str += i <= barLength ? '#' : ' ';
+        str += i <= bar_length ? '#' : ' ';
     }
     stream.clearLine();
     stream.write('[' + str + '] ' +  percentage);
@@ -1146,7 +1146,7 @@ cli.progress = function (progress, decimals, stream) {
  * @param {String|Boolean} prefix (optional)
  * @api public
  */
-var spinnerInterval;
+var spinner_interval;
 cli.spinner = function (prefix, end, stream) {
     stream = stream || process.stdout;
     if(!stream.isTTY) {
@@ -1157,11 +1157,11 @@ cli.spinner = function (prefix, end, stream) {
         stream.clearLine();
         stream.cursorTo(0);
         stream.write(prefix + '\n');
-        return clearInterval(spinnerInterval);
+        return clearInterval(spinner_interval);
     }
     prefix = prefix + ' ' || '';
     var spinner = ['-','\\','|','/'], i = 0, l = spinner.length;
-    spinnerInterval = setInterval(function () {
+    spinner_interval = setInterval(function () {
         stream.clearLine();
         stream.cursorTo(0);
         stream.write(prefix + spinner[i++]);
