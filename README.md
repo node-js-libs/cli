@@ -146,12 +146,18 @@ cli.withInput(file, function (line, newline, eof) {
     }
 });
 ```
+*Note: `file` can be omitted if you want to work with stdin*
 
 ```javascript
-cli.toType(object)				// While return a string of the type of Object if it is a Built-in Type
+//cli.toType(object);         If a Built-in type, returns the name of the type as a lower cased String
+cli.toType([]);               // 'array'
+cli.toType(new Date());       // 'date'
+cli.toType(1);                // 'integer'
+cli.toType(1.1);              // 'float'
+cli.toType(Math);             // 'math'
+cli.toType(/a/);              // 'regex'
+cli.toType(JSON);             // 'json'
 ```
-
-*Note: `file` can be omitted if you want to work with stdin*
 
 To output a progress bar, call
 
