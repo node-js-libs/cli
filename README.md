@@ -100,10 +100,10 @@ cli.parse({
 ### Explanation of array options
 
 1.	A short name, single letter i.e. -f, or false if no short name is supported for this option  
-2.	A Description of the option  
+2.	A description of the option  
 3.	The type of object the argument should map too.  
-	Below is a list of the return type, a description and then  
-	followed by a list of valid value you can use for this option to get this type of Object back.
+	Below is a list of the return types followed by a description and a list of  
+	valid values you can use for this option to get desired type of Object back.
 	- **as-is:** What you enter, is what you get
           - 'string', 1,  true
    - **int:** Is converted to an Integer wrapped in a Number Object
@@ -126,7 +126,7 @@ cli.parse({
           - 'bool', 'boolean', 'on'
 	- **false:** Converted to false if argument is present on command line
           - 'false', 'off', false, 0
-4.	A default value for this option if one is not give on the command line
+4.	A default value for this option if one is not given on the command line
 
 ## Helper methods
 
