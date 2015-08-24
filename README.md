@@ -83,16 +83,61 @@ $ ./static.js -ld --serve=/tmp
 
 For more examples, see [./examples](https://github.com/chriso/cli/tree/master/examples)
 
+## Command Line Arguments Parser
+
+cli takes an object as a map for the arguments you wish to parse.  
+Each property/key in the object is the long version of the argument i.e. --file  
+The array associated with it is the options to apply to that argument.  
+
+### Example
+```javascript
+cli.parse({
+	file: [ 'f', 'A file to process', 'file', temp.log ],          // -f, --file FILE   A file to process
+	time: [ 't', 'An access time', 'time', false],                 // -t, --time TIME   An access time
+	work: [ false, 'What kind of work to do, 'string', 'sleep' ]   //     --work STRING What kind of work to do
+});
+```
+### Explanation of array options
+
+1.	A short name, single letter i.e. -f, or false if no short name is supported for this option  
+2.	A Description of the option  
+3.	The type of object the argument should map too.  
+	Below is a list of the return type, a description and then  
+	followed by a list of valid value you can use for this option to get this type of Object back.
+	- **as-is:** What you enter, is what you get
+          - 'string', 1,  true
+   - **int:** Is converted to an Integer wrapped in a Number Object
+          - 'int', 'number', 'num',
+          - 'time', 'seconds', 'secs', 'minutes', 'mins'
+          - 'x', 'n'
+   - **date:** Is converted to a Date Object
+          - 'date', 'datetime', 'date_time'
+	- **float:** Is converted to a Float wrapped in a Number Object
+          - 'float', 'decimal'
+	- **file:** Is converted to a String Object if it is a valid path
+          - 'path', 'file', 'directory', 'dir'
+	- **email:** Converted to a String Object if it is a valid email format
+          - 'email'
+	- **url:** Converted to a String Object if it is a valid URL format
+          - 'url', 'uri', 'domain', 'host'
+   - **ip:** Converted to a String Object if it is a valid IP Address format
+          - 'ip'
+   - **true:** Converted to true if argument is present on command line
+          - 'bool', 'boolean', 'on'
+	- **false:** Converted to false if argument is present on command line
+          - 'false', 'off', false, 0
+4.	A default value for this option if one is not give on the command line
+
 ## Helper methods
 
-cli has methods that collect stdin (newline is autodetected as \n or \r\n)
+cli has methods that collect stdin (newline is auto-detected as \n or \r\n)
 
 ```javascript
 cli.withStdin(callback);        //callback receives stdin as a string
 cli.withStdinLines(callback);   //callback receives stdin split into an array of lines (lines, newline)
 ```
 
-cli also has a lower level method for working with input line by line (see [./examples/cat.js](https://github.com/chriso/cli/blob/master/examples/cat.js) for an example). 
+cli also has a lower level method for working with input line by line (see [./examples/cat.js](https://github.com/chriso/cli/blob/master/examples/cat.js) for an example).
 
 ```javascript
 cli.withInput(file, function (line, newline, eof) {
@@ -100,6 +145,10 @@ cli.withInput(file, function (line, newline, eof) {
         this.output(line + newline);
     }
 });
+```
+
+```javascript
+cli.toType(object)				// While return a string of the type of Object if it is a Built-in Type
 ```
 
 *Note: `file` can be omitted if you want to work with stdin*
@@ -120,7 +169,7 @@ cli also comes bundled with kof's [node-natives](https://github.com/kof/node-nat
 
 ## Plugins
 
-Plugins are a way of adding common opts and can be enabled using 
+Plugins are a way of adding common opts and can be enabled using
 
 ```javascript
 cli.enable(plugin1, [plugin2, ...]);  //To disable, use the equivalent disable() method
