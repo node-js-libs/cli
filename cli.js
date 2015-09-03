@@ -307,6 +307,9 @@ cli.parse = function (opts, command_def) {
                 case 'x': case 'n':
                     parsed[opt] = cli.getInt(default_val);
                     break;
+                case 'date': case 'datetime': case 'date_time':
+                    parsed[opt] = cli.getDate(default_val);
+                    break;
                 case 'float': case 'decimal':
                     parsed[opt] = cli.getFloat(default_val);
                     break;
@@ -766,6 +769,19 @@ cli.getInt = function (default_val) {
     }, cli.getOptError('a number', 'NUMBER'));
 }
 
+cli.getDate = function (default_val) {
+
+    return cli.getValue(default_val, function (value) {
+        if (cli.toType(value) === 'date') return value;
+        value = new Date(value);
+        if ( ! value.getTime() ) {
+            throw value.toString();
+        }
+
+        return value;
+    }, cli.getOptError('a date', 'DATE'));
+}
+
 cli.getFloat = function (default_val) {
     return cli.getValue(default_val, function (value) {
         if (!value.match(/^(?:-?(?:0|[1-9][0-9]*))?(?:\.[0-9]*)?$/)) {
@@ -917,6 +933,34 @@ cli.withInput = function (file, encoding, callback) {
         callback.apply(cli, [null, null, true]);
     });
 };
+
+/**
+ * This function does a much better job at determining the object type than the typeof operator
+ * @author Angus Croll  - https://javascriptweblog.wordpress.com/2011/08/08/fixing-the-javascript-typeof-operator/
+ * @param  {Object} obj A Javascript object you wish to know the type of.
+ * @return {string}     A string describing the Object's type if it is indeed a built in JavaScript type.
+ */
+cli.toType = function(obj) {
+    var type = ({}).toString.call(obj).match(/\s([a-zA-Z]+)/)[1].toLowerCase();
+
+    function isInt(n) {
+        return Number(n) === n && n % 1 === 0;
+    }
+
+    function isFloat(n){
+        return n === Number(n) && n % 1 !== 0;
+    }
+
+    if ( type === 'number' ) {
+        if ( isInt(obj) ) {
+            return 'integer';
+        } else if ( isFloat(obj) ) {
+            return 'float';
+        }
+    }
+
+    return type;
+}
 
 /**
  * A method for creating and controlling a daemon.
@@ -1106,7 +1150,7 @@ cli.progress = function (progress, decimals, stream) {
     last_progress_call = now;
 
     var pwr = Math.pow(10, decimals);
-    var percentage_as_num = Math.floor(progress * 100 * pwr) / pwr; 
+    var percentage_as_num = Math.floor(progress * 100 * pwr) / pwr;
     if (!stream.isTTY && percentage_as_num < 100 && percentage_as_num - last_progress_percentage < min_progress_increase) {
         return; //don't over-print if not TTY
     }
