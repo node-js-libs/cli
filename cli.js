@@ -28,7 +28,7 @@ var cli = exports,
     argv, curr_opt, curr_val, full_opt, is_long,
     short_tags = [], opt_list, parsed = {},
     usage, argv_parsed, command_list, commands,
-    daemon, daemon_arg, no_color, show_debug;
+    daemon, daemon_arg, show_debug;
 
 cli.app = null;
 cli.version = null;
@@ -67,9 +67,9 @@ for (var module in natives) {
 cli.output = console.log;
 cli.exit = require('exit');
 
-var no_color = false;
+cli.no_color = false;
 if (process.env.NODE_DISABLE_COLORS || process.env.TERM === 'dumb') {
-  no_color = true;
+    cli.no_color = true;
 }
 
 /**
@@ -353,7 +353,7 @@ cli.parse = function (opts, command_def) {
             } else if (enable.catchall && (o === 'c' || o === 'catch')) {
                 continue;
             } else if (enable.status && (o === 'k' || o === 'no-color')) {
-                no_color = (o === 'k' || o === 'no-color');
+                cli.no_color = (o === 'k' || o === 'no-color');
                 continue;
             } else if (enable.status && (o === 'debug')) {
                 show_debug = o === 'debug';
@@ -452,17 +452,17 @@ cli.status = function (msg, type) {
     var pre;
     switch (type) {
     case 'info':
-        pre = no_color ? 'INFO:' : '\x1B[33mINFO\x1B[0m:';
+        pre = cli.no_color ? 'INFO:' : '\x1B[33mINFO\x1B[0m:';
         break;
     case 'debug':
-        pre = no_color ? 'DEBUG:' : '\x1B[36mDEBUG\x1B[0m:';
+        pre = cli.no_color ? 'DEBUG:' : '\x1B[36mDEBUG\x1B[0m:';
         break;
     case 'error':
     case 'fatal':
-        pre = no_color ? 'ERROR:' : '\x1B[31mERROR\x1B[0m:';
+        pre = cli.no_color ? 'ERROR:' : '\x1B[31mERROR\x1B[0m:';
         break;
     case 'ok':
-        pre = no_color ? 'OK:' : '\x1B[32mOK\x1B[0m:';
+        pre = cli.no_color ? 'OK:' : '\x1B[32mOK\x1B[0m:';
         break;
     }
     msg = pre + ' ' + msg;
@@ -595,7 +595,7 @@ cli.getUsage = function (code) {
     };
 
     usage = usage || cli.app + ' [OPTIONS]' + (command_list.length ? ' <command>' : '') + ' [ARGS]';
-    if (no_color) {
+    if (cli.no_color) {
         console.error('Usage:\n  ' + usage);
         console.error('Options: ');
     } else {
