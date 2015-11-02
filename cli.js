@@ -259,7 +259,7 @@ cli.next = function () {
  * @api public
  */
 cli.parse = function (opts, command_def) {
-    var default_val, i, parsed = cli.options, seen,
+    var default_val, i, o, parsed = cli.options, seen,
         catch_all = !opts;
     opt_list = opts || {};
     commands = command_def;
