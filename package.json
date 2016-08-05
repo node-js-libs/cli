@@ -14,7 +14,7 @@
     "url": "http://github.com/node-js-libs/cli.git"
   },
   "dependencies": {
-    "glob": "^5.0.10",
+    "glob": "^7.0.5",
     "exit": "0.1.2"
   },
   "contributors": [
