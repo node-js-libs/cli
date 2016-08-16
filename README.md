@@ -39,50 +39,6 @@ cli.withStdinLines(function(lines, newline) {
 });
 ```
 
-### static.js
-
-Let's create a static file server with daemon support to see the opts parser + plugins in use - note: this requires `npm install creationix daemon`
-
-```javascript
-var cli = require('cli').enable('daemon', 'status'); //Enable 2 plugins
-
-cli.parse({
-    log:   ['l', 'Enable logging'],
-    port:  ['p', 'Listen on this port', 'number', 8080],
-    serve: [false, 'Serve static files from PATH', 'path', './public']
-});
-
-cli.main(function(args, options) {
-    var server, middleware = [];
-
-    if (options.log) {
-        this.debug('Enabling logging');
-        middleware.push(require('creationix/log')());
-    }
-
-    this.debug('Serving files from ' + options.serve);
-    middleware.push(require('creationix/static')('/', options.serve, 'index.html'));
-
-    server = this.createServer(middleware).listen(options.port);
-
-    this.ok('Listening on port ' + options.port);
-});
-```
-
-To output usage information
-
-```bash
-$ ./static.js --help
-```
-
-To create a daemon that serves files from */tmp*, run
-
-```bash
-$ ./static.js -ld --serve=/tmp
-```
-
-For more examples, see [./examples](https://github.com/chriso/cli/tree/master/examples)
-
 ## Command Line Arguments Parser
 
 cli takes an object as a map for the arguments you wish to parse.  
@@ -208,12 +164,6 @@ cli.ok(msg);
 **glob**  - *requires* `npm install glob`
 
 Enables glob matching of arguments
-
-**daemon**  - *requires* `npm install daemon`
-
-Adds `-d,--daemon ARG` for daemonizing the process and controlling the resulting daemon
-
-`ARG` can be either start (default), stop, restart, pid (outputs the daemon's pid if it's running), or log (output the daemon's stdout+stderr)
 
 **timeout**
 
