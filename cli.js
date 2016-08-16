@@ -28,7 +28,7 @@ var cli = exports,
     argv, curr_opt, curr_val, full_opt, is_long,
     short_tags = [], opt_list, parsed = {},
     usage, argv_parsed, command_list, commands,
-    daemon, daemon_arg, show_debug;
+    show_debug;
 
 cli.app = null;
 cli.version = null;
@@ -85,7 +85,6 @@ if (process.env.NODE_DISABLE_COLORS || process.env.TERM === 'dumb') {
 var enable = {
     help: true,      //Adds -h, --help
     version: false,  //Adds -v,--version => gets version by parsing a nearby package.json
-    daemon: false,   //Adds -d,--daemon [ARG] => (see cli.daemon() below)
     status: false,   //Adds -k,--no-color & --debug => display plain status messages /display debug messages
     timeout: false,  //Adds -t,--timeout N => timeout the process after N seconds
     catchall: false, //Adds -c,--catch => catch and output uncaughtExceptions
@@ -94,16 +93,6 @@ var enable = {
 cli.enable = function (/*plugins*/) {
     Array.prototype.slice.call(arguments).forEach(function (plugin) {
         switch (plugin) {
-        case 'daemon':
-            try {
-                daemon = require('daemon');
-                if (typeof daemon.daemonize !== 'function') {
-                    throw 'Invalid module';
-                }
-            } catch (e) {
-                cli.fatal('daemon.node not installed. Please run `npm install daemon`');
-            }
-            break;
         case 'catchall':
             process.on('uncaughtException', function (err) {
                 cli.error('Uncaught exception: ' + (err.msg || err));
@@ -347,9 +336,6 @@ cli.parse = function (opts, command_def) {
                 console.error(cli.app + ' v' + cli.version);
                 cli.exit();
                 break;
-            } else if (enable.daemon && (o === 'd' || o === 'daemon')) {
-                daemon_arg = cli.getArrayValue(['start','stop','restart','pid','log'], is_long ? null : 'start');
-                continue;
             } else if (enable.catchall && (o === 'c' || o === 'catch')) {
                 continue;
             } else if (enable.status && (o === 'k' || o === 'no-color')) {
@@ -667,9 +653,6 @@ cli.getUsage = function (code) {
     if (enable.catchall && seen_opts.indexOf('c') === -1 && seen_opts.indexOf('catch') === -1) {
         console.error(pad('  -c, --catch', switch_pad) + 'Catch unanticipated errors');
     }
-    if (enable.daemon && seen_opts.indexOf('d') === -1 && seen_opts.indexOf('daemon') === -1) {
-        console.error(pad('  -d, --daemon [ARG]', switch_pad) + 'Daemonize the process. Control the daemon using [start, stop, restart, log, pid]');
-    }
     if (enable.version && seen_opts.indexOf('v') === -1 && seen_opts.indexOf('version') === -1) {
         console.error(pad('  -v, --version', switch_pad) + 'Display the current version');
     }
@@ -965,102 +948,13 @@ cli.toType = function(obj) {
 }
 
 /**
- * A method for creating and controlling a daemon.
- *
- * `arg` can be:
- *      start = daemonizes the process
- *      stop  = stops the daemon if it is running
- *      restart = alias for stop -> start
- *      pid = outputs the daemon's PID if it is running
- *      log = outputs the daemon's log file (stdout + stderr)
- *
- * @param {String} arg (Optional - default is 'start')
- * @param {Function} callback
- * @api public
- */
-cli.daemon = function (arg, callback) {
-    if (typeof daemon === 'undefined') {
-        cli.fatal('Daemon is not initialized');
-    }
-
-    if (typeof arg === 'function') {
-        callback = arg;
-        arg = 'start';
-    }
-
-    var lock_file = '/tmp/' + cli.app + '.pid',
-        log_file = '/tmp/' + cli.app + '.log';
-
-    var start = function () {
-        daemon.daemonize(log_file, lock_file, function (err) {
-            if (err) return cli.error('Error starting daemon: ' + err);
-            callback();
-        });
-    };
-
-    var stop = function () {
-        try {
-            cli.native.fs.readFileSync(lock_file);
-        } catch (e) {
-            return cli.error('Daemon is not running');
-        }
-        daemon.kill(lock_file, function (err, pid) {
-            if (err && err.errno === 3) {
-                return cli.error('Daemon is not running');
-            } else if (err) {
-                return cli.error('Error stopping daemon: ' + err.errno);
-            }
-            cli.ok('Successfully stopped daemon with pid: ' + pid);
-        });
-    };
-
-    switch(arg) {
-    case 'stop':
-        stop();
-        break;
-    case 'restart':
-        daemon.stop(lock_file, function () {
-            start();
-        });
-        break;
-    case 'log':
-        try {
-            cli.native.fs.createReadStream(log_file, {encoding: 'utf8'}).pipe(process.stdout);
-        } catch (e) {
-            return cli.error('No daemon log file');
-        }
-        break;
-    case 'pid':
-        try {
-            var pid = cli.native.fs.readFileSync(lock_file, 'utf8');
-            cli.native.fs.statSync('/proc/' + pid);
-            cli.info(pid);
-        } catch (e) {
-            return cli.error('Daemon is not running');
-        }
-        break;
-    default:
-        start();
-        break;
-    }
-}
-
-/**
- * The main entry method. Calling cli.main() is only necessary in
- * scripts that have daemon support enabled. `callback` receives (args, options)
+ * The main entry method. `callback` receives (args, options)
  *
  * @param {Function} callback
  * @api public
  */
 cli.main = function (callback) {
-    var after = function () {
-        callback.apply(cli, [cli.args, cli.options]);
-    };
-    if (enable.daemon && daemon_arg) {
-        cli.daemon(daemon_arg, after);
-    } else {
-        after();
-    }
+    callback.call(cli, cli.args, cli.options);
 }
 
 /**
