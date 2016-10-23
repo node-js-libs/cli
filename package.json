@@ -1,6 +1,6 @@
 { "name"          : "cli",
   "description"   : "A tool for rapidly building command line apps",
-  "version"       : "1.0.0",
+  "version"       : "1.0.1",
   "homepage"      : "http://github.com/node-js-libs/cli",
   "keywords"      : ["cli","command line","opts","parseopt","opt","args","console","argsparse","optparse","autocomplete","command","autocompletion"],
   "author"        : "Chris O'Hara <cohara87@gmail.com>",
