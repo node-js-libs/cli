@@ -173,6 +173,10 @@ Adds `-t,--timeout N` to exit the process after N seconds with an error
 
 Adds `-c,--catch` to catch and output uncaughtExceptions and resume execution
 
+**autocomplete** - *enabled by default*
+
+Enables command [auto-completion](https://github.com/chriso/cli/blob/master/examples/command.js)
+
 *Note: Plugins are automatically disabled if an option or switch of the same name is already defined*
 
 ## LICENSE
