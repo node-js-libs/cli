@@ -83,12 +83,13 @@ if (process.env.NODE_DISABLE_COLORS || process.env.TERM === 'dumb') {
  * The 'help' plugin is enabled by default.
  */
 var enable = {
-    help: true,      //Adds -h, --help
-    version: false,  //Adds -v,--version => gets version by parsing a nearby package.json
-    status: false,   //Adds -k,--no-color & --debug => display plain status messages /display debug messages
-    timeout: false,  //Adds -t,--timeout N => timeout the process after N seconds
-    catchall: false, //Adds -c,--catch => catch and output uncaughtExceptions
-    glob: false      //Adds glob matching => use cli.glob(arg)
+    help: true,         //Adds -h, --help
+    version: false,     //Adds -v,--version => gets version by parsing a nearby package.json
+    status: false,      //Adds -k,--no-color & --debug => display plain status messages /display debug messages
+    timeout: false,     //Adds -t,--timeout N => timeout the process after N seconds
+    catchall: false,    //Adds -c,--catch => catch and output uncaughtExceptions
+    glob: false,        //Adds glob matching => use cli.glob(arg)
+    autocomplete: true  //Adds command auto-completion
 }
 cli.enable = function (/*plugins*/) {
     Array.prototype.slice.call(arguments).forEach(function (plugin) {
@@ -238,7 +239,7 @@ cli.next = function () {
  * `commands` is an optional array or object for apps that are of the form
  *      my_app [OPTIONS] <command> [ARGS]
  *  The command list is output with usage information + there is bundled
- *  support for auto-completion, etc.
+ *  support for auto-completion (if 'autocomplete' plugin is enabled), etc.
  *
  * See README.md for more information.
  *
@@ -397,20 +398,22 @@ cli.autocompleteCommand = function (command) {
     } else {
         list = command_list;
     }
-    var i, j = 0, c = command.length, tmp_list;
+    var i, j, l = 0, c = command.length, tmp_list;
     if (list.length === 0 || list.indexOf(command) !== -1) {
         return command;
     }
-    for (i = 0; i < c; i++) {
-        tmp_list = [];
+    if (enable['autocomplete']) {
+        for (i = 0; i < c; i++) {
+            tmp_list = [];
+            l = list.length;
+            if (l <= 1) break;
+            for (j = 0; j < l; j++)
+                if (list[j].length >= i && list[j][i] === command[i])
+                    tmp_list.push(list[j]);
+            list = tmp_list;
+        }
         l = list.length;
-        if (l <= 1) break;
-        for (j = 0; j < l; j++)
-            if (list[j].length >= i && list[j][i] === command[i])
-                tmp_list.push(list[j]);
-        list = tmp_list;
     }
-    l = list.length;
     if (l === 1) {
         return list[0];
     } else if (l === 0) {
