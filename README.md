@@ -111,7 +111,7 @@ cli.toType(new Date());       // 'date'
 cli.toType(1);                // 'integer'
 cli.toType(1.1);              // 'float'
 cli.toType(Math);             // 'math'
-cli.toType(/a/);              // 'regex'
+cli.toType(/a/);              // 'regexp'
 cli.toType(JSON);             // 'json'
 ```
 
