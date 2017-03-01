@@ -64,7 +64,7 @@ for (var module in natives) {
     define_native(module);
 }
 
-cli.output = console.log;
+cli.output = console.error;
 cli.exit = require('exit');
 
 cli.no_color = false;
@@ -333,7 +333,7 @@ cli.parse = function (opts, command_def) {
                 if (cli.version == null) {
                     cli.parsePackageJson();
                 }
-                console.error(cli.app + ' v' + cli.version);
+                cli.output(cli.app + ' v' + cli.version);
                 cli.exit();
                 break;
             } else if (enable.catchall && (o === 'c' || o === 'catch')) {
@@ -453,13 +453,13 @@ cli.status = function (msg, type) {
     }
     msg = pre + ' ' + msg;
     if (type === 'fatal') {
-        console.error(msg);
+        cli.output(msg);
         return cli.exit(1);
     }
     if (enable.status && !show_debug && type === 'debug') {
         return;
     }
-    console.error(msg);
+    cli.output(msg);
 };
 ['info','error','ok','debug','fatal'].forEach(function (type) {
     cli[type] = function (msg) {
@@ -582,11 +582,11 @@ cli.getUsage = function (code) {
 
     usage = usage || cli.app + ' [OPTIONS]' + (command_list.length ? ' <command>' : '') + ' [ARGS]';
     if (cli.no_color) {
-        console.error('Usage:\n  ' + usage);
-        console.error('Options: ');
+        cli.output('Usage:\n  ' + usage);
+        cli.output('Options: ');
     } else {
-        console.error('\x1b[1mUsage\x1b[0m:\n  ' + usage);
-        console.error('\n\x1b[1mOptions\x1b[0m: ');
+        cli.output('\x1b[1mUsage\x1b[0m:\n  ' + usage);
+        cli.output('\n\x1b[1mOptions\x1b[0m: ');
     }
     for (var opt in opt_list) {
 
@@ -634,42 +634,42 @@ cli.getUsage = function (code) {
         line = pad(line, switch_pad);
         line += trunc_desc(line, desc);
         line += optional ? ' (Default is ' + optional + ')' : '';
-        console.error(line.replace('%s', '%\0s'));
+        cli.output(line.replace('%s', '%\0s'));
 
         seen_opts.push(short);
         seen_opts.push(long);
     }
     if (enable.timeout && seen_opts.indexOf('t') === -1 && seen_opts.indexOf('timeout') === -1) {
-        console.error(pad('  -t, --timeout N', switch_pad) + 'Exit if the process takes longer than N seconds');
+        cli.output(pad('  -t, --timeout N', switch_pad) + 'Exit if the process takes longer than N seconds');
     }
     if (enable.status) {
         if (seen_opts.indexOf('k') === -1 && seen_opts.indexOf('no-color') === -1) {
-            console.error(pad('  -k, --no-color', switch_pad) + 'Omit color from output');
+            cli.output(pad('  -k, --no-color', switch_pad) + 'Omit color from output');
         }
         if (seen_opts.indexOf('debug') === -1) {
-            console.error(pad('      --debug', switch_pad) + 'Show debug information');
+            cli.output(pad('      --debug', switch_pad) + 'Show debug information');
         }
     }
     if (enable.catchall && seen_opts.indexOf('c') === -1 && seen_opts.indexOf('catch') === -1) {
-        console.error(pad('  -c, --catch', switch_pad) + 'Catch unanticipated errors');
+        cli.output(pad('  -c, --catch', switch_pad) + 'Catch unanticipated errors');
     }
     if (enable.version && seen_opts.indexOf('v') === -1 && seen_opts.indexOf('version') === -1) {
-        console.error(pad('  -v, --version', switch_pad) + 'Display the current version');
+        cli.output(pad('  -v, --version', switch_pad) + 'Display the current version');
     }
     if (enable.help && seen_opts.indexOf('h') === -1 && seen_opts.indexOf('help') === -1) {
-        console.error(pad('  -h, --help', switch_pad) + 'Display help and usage details');
+        cli.output(pad('  -h, --help', switch_pad) + 'Display help and usage details');
     }
     if (command_list.length) {
-        console.error('\n\x1b[1mCommands\x1b[0m: ');
+        cli.output('\n\x1b[1mCommands\x1b[0m: ');
         if (!Array.isArray(commands)) {
             for (var c in commands) {
                 line = '  ' + pad(c, switch_pad - 2);
                 line += trunc_desc(line, commands[c]);
-                console.error(line);
+                cli.output(line);
             }
         } else {
             command_list.sort();
-            console.error('  ' + trunc_desc('  ', command_list.join(', ')));
+            cli.output('  ' + trunc_desc('  ', command_list.join(', ')));
         }
     }
     return cli.exit(code);
@@ -970,7 +970,7 @@ cli.main = function (callback) {
 cli.createServer = function(/*layers*/) {
     var defaultStackErrorHandler = function (req, res, err) {
         if (err) {
-            console.error(err.stack);
+            cli.output(err.stack);
             res.writeHead(500, {"Content-Type": "text/plain"});
             return res.end(err.stack + "\n");
         }
