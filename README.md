@@ -48,7 +48,7 @@ The array associated with it is the options to apply to that argument.
 ### Example
 ```javascript
 cli.parse({
-	file: [ 'f', 'A file to process', 'file', temp.log ],          // -f, --file FILE   A file to process
+	file: [ 'f', 'A file to process', 'file', 'temp.log' ],        // -f, --file FILE   A file to process
 	time: [ 't', 'An access time', 'time', false],                 // -t, --time TIME   An access time
 	work: [ false, 'What kind of work to do', 'string', 'sleep' ]  //     --work STRING What kind of work to do
 });
@@ -111,7 +111,7 @@ cli.toType(new Date());       // 'date'
 cli.toType(1);                // 'integer'
 cli.toType(1.1);              // 'float'
 cli.toType(Math);             // 'math'
-cli.toType(/a/);              // 'regex'
+cli.toType(/a/);              // 'regexp'
 cli.toType(JSON);             // 'json'
 ```
 
