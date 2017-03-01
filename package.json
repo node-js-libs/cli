@@ -17,6 +17,15 @@
     "glob": "^7.1.1",
     "exit": "0.1.2"
   },
+  "devDependencies": {
+    "intelli-espower-loader": "^1.0.1",
+    "mocha": "^3.2.0",
+    "power-assert": "^1.4.2",
+    "proxyquire": "^1.7.11"
+  },
+  "scripts": {
+      "test": "mocha --require intelli-espower-loader"
+  },
   "contributors": [
     { "name": "Douglas Meyer", "github": "https://github.com/DouglasMeyer" }
   ],
