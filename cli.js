@@ -43,26 +43,14 @@ cli.width = 70;
 cli.option_width = 25;
 
 /**
- * Bind kof's node-natives (https://github.com/kof/node-natives) to `cli.native`
- *
- * Rather than requiring node natives (e.g. var fs = require('fs')), all
- * native modules can be accessed like `cli.native.fs`
+ * Bind node native libs to `cli.native`
  */
-cli.native = {};
-var define_native = function (module) {
-    Object.defineProperty(cli.native, module, {
-        enumerable: true,
-        configurable: true,
-        get: function() {
-            delete cli.native[module];
-            return (cli.native[module] = require(module));
-        }
-    });
+cli.native = {
+    path: require('path'),
+    fs: require('fs'),
+    http: require('http'),
+    child_process: require('child_process')
 };
-var natives = process.binding('natives');
-for (var module in natives) {
-    define_native(module);
-}
 
 cli.output = console.log;
 cli.exit = require('exit');
