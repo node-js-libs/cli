@@ -558,7 +558,7 @@ var pad = function (str, len) {
  * @api public
  */
 cli.getUsage = function (code) {
-    var short, desc, optional, line, seen_opts = [],
+    var short, long, type, desc, optional, line, seen_opts = [],
         switch_pad = cli.option_width;
 
     var trunc_desc = function (pref, desc, len) {
