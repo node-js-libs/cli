@@ -62,11 +62,11 @@ cli.parse({
 	valid values you can use for this option to get desired type of Object back.
 	- **as-is:** What you enter, is what you get
           - 'string', 1,  true
-   - **int:** Is converted to an Integer wrapped in a Number Object
+   	- **int:** Is converted to an Integer wrapped in a Number Object
           - 'int', 'number', 'num',
           - 'time', 'seconds', 'secs', 'minutes', 'mins'
           - 'x', 'n'
-   - **date:** Is converted to a Date Object
+   	- **date:** Is converted to a Date Object
           - 'date', 'datetime', 'date_time'
 	- **float:** Is converted to a Float wrapped in a Number Object
           - 'float', 'decimal'
@@ -76,9 +76,9 @@ cli.parse({
           - 'email'
 	- **url:** Converted to a String Object if it is a valid URL format
           - 'url', 'uri', 'domain', 'host'
-   - **ip:** Converted to a String Object if it is a valid IP Address format
+   	- **ip:** Converted to a String Object if it is a valid IP Address format
           - 'ip'
-   - **true:** Converted to true if argument is present on command line
+   	- **true:** Converted to true if argument is present on command line
           - 'bool', 'boolean', 'on'
 	- **false:** Converted to false if argument is present on command line
           - 'false', 'off', false, 0
