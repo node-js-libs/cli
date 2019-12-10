@@ -1,3 +1,5 @@
+[![run on repl.it](http://repl.it/badge/github/node-js-libs/cli)](https://repl.it/github/node-js-libs/cli)
+
 **cli is a toolkit for rapidly building command line apps - it includes:**
 
 - Full featured opts/args parser
